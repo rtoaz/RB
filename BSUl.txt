@@ -1,0 +1,5333 @@
+local game = game or getfenv(1).game
+local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local Lighting = game:GetService("Lighting")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local Mouse = LocalPlayer:GetMouse()
+
+-- 模块缓存系统（原版完整实现）
+local a = {
+    cache = {},
+    load = function(b)
+        if not a.cache[b] then
+            a.cache[b] = { c = a[b]() }
+        end
+        return a.cache[b].c
+    end
+}
+
+-- ==============================
+-- 原始子模块完整实现（模块a-模块e）
+-- ==============================
+
+-- 模块a：核心UI创建器（含魔改功能）
+function a.a()
+    local b = RunService
+    local d = b.Heartbeat
+    local e = UserInputService
+    local f = game:GetService("TweenService")
+    local g = game:GetService("LocalizationService")
+    local h = loadstring(game:HttpGetAsync("https://raw.githubusercontent.com/Footagesus/Icons/main/Main-v2.lua"))()
+    h.SetIconsType("lucide")
+
+    local i
+    local j = {
+        Font = "rbxassetid://12187365364",
+        Localization = nil,
+        CanDraggable = true,
+        Theme = nil,
+        Themes = nil,
+        Signals = {},
+        Objects = {},
+        LocalizationObjects = {},
+        FontObjects = {},
+        Language = string.match(g.SystemLocaleId, "^[a-z]+"),
+        Request = http_request or (syn and syn.request) or request,
+        DefaultProperties = {
+            ScreenGui = { ResetOnSpawn = false, ZIndexBehavior = "Sibling" },
+            CanvasGroup = { BorderSizePixel = 0, BackgroundColor3 = Color3.new(1, 1, 1) },
+            Frame = { BorderSizePixel = 0, BackgroundColor3 = Color3.new(1, 1, 1) },
+            TextLabel = {
+                BackgroundColor3 = Color3.new(1, 1, 1),
+                BorderSizePixel = 0,
+                Text = "",
+                RichText = true,
+                TextColor3 = Color3.new(1, 1, 1),
+                TextSize = 14
+            },
+            TextButton = {
+                BackgroundColor3 = Color3.new(1, 1, 1),
+                BorderSizePixel = 0,
+                Text = "",
+                AutoButtonColor = false,
+                TextColor3 = Color3.new(1, 1, 1),
+                TextSize = 14
+            },
+            TextBox = {
+                BackgroundColor3 = Color3.new(1, 1, 1),
+                BorderColor3 = Color3.new(0, 0, 0),
+                ClearTextOnFocus = false,
+                Text = "",
+                TextColor3 = Color3.new(0, 0, 0),
+                TextSize = 14
+            },
+            ImageLabel = { BackgroundTransparency = 1, BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0 },
+            ImageButton = { BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, AutoButtonColor = false },
+            UIListLayout = { SortOrder = "LayoutOrder" },
+            ScrollingFrame = { ScrollBarImageTransparency = 1, BorderSizePixel = 0 },
+            VideoFrame = { BorderSizePixel = 0 }
+        },
+        Colors = {
+            Red = "#e53935",
+            Orange = "#f57c00",
+            Green = "#43a047",
+            Blue = "#039be5",
+            White = "#ffffff",
+            Grey = "#484848"
+        },
+        DefaultTweenTime = 0.1,
+        DefaultHoverScale = 1.03,
+        IconCachePath = "WindUI/IconCache/"
+    }
+
+    -- 初始化
+    function j.Init(l)
+        i = l
+        -- 初始化图标缓存目录
+        if not isfolder(j.IconCachePath) then
+            makefolder(j.IconCachePath)
+        end
+    end
+
+    -- 信号管理
+    function j.AddSignal(l, m)
+        local p = l:Connect(m)
+        table.insert(j.Signals, p)
+        return p
+    end
+
+    function j.DisconnectAll()
+        for l, m in next, j.Signals do
+            local p = table.remove(j.Signals, l)
+            p:Disconnect()
+        end
+    end
+
+    -- 安全回调
+    function j.SafeCallback(l, ...)
+        if not l then return end
+        local m, p = pcall(l, ...)
+        if not m then
+            if i and i.Window and i.Window.Debug then
+                local r, u = p:find(":%d+: ")
+                warn("[ WindUI: DEBUG Mode ] " .. p)
+                return i:Notify({
+                    Title = "DEBUG Mode: Error",
+                    Content = not u and p or p:sub(u + 1),
+                    Duration = 8
+                })
+            end
+        end
+    end
+
+    -- 主题管理
+    function j.SetTheme(l)
+        j.Theme = l
+        j.UpdateTheme(nil, true)
+    end
+
+    function j.AddFontObject(l)
+        table.insert(j.FontObjects, l)
+        j.UpdateFont(j.Font)
+    end
+
+    function j.UpdateFont(l)
+        j.Font = l
+        for m, p in next, j.FontObjects do
+            p.FontFace = Font.new(l, p.FontFace.Weight, p.FontFace.Style)
+        end
+    end
+
+    function j.GetThemeProperty(l, m)
+        return m[l] or j.Themes.Dark[l]
+    end
+
+    function j.AddThemeObject(l, m)
+        j.Objects[l] = { Object = l, Properties = m }
+        j.UpdateTheme(l, false)
+        return l
+    end
+
+    function j.AddLangObject(l)
+        local m = j.LocalizationObjects[l]
+        local p = m.Object
+        local r = currentObjTranslationId
+        j.UpdateLang(p, r)
+        return p
+    end
+
+    function j.UpdateTheme(l, m)
+        local function ApplyTheme(p)
+            for r, u in pairs(p.Properties or {}) do
+                local v = j.GetThemeProperty(u, j.Theme)
+                if v then
+                    if not m then
+                        p.Object[r] = Color3.fromHex(v)
+                    else
+                        j.Tween(p.Object, 0.08, { [r] = Color3.fromHex(v) }):Play()
+                    end
+                end
+            end
+        end
+        if l then
+            local p = j.Objects[l]
+            if p then ApplyTheme(p) end
+        else
+            for p, r in pairs(j.Objects) do ApplyTheme(r) end
+        end
+    end
+
+    -- 语言管理
+    function j.SetLangForObject(l)
+        if j.Localization and j.Localization.Enabled then
+            local m = j.LocalizationObjects[l]
+            if not m then return end
+            local p = m.Object
+            local r = m.TranslationId
+            local u = j.Localization.Translations[j.Language]
+            if u and u[r] then
+                p.Text = u[r]
+            else
+                local v = j.Localization and j.Localization.Translations and j.Localization.Translations.en or nil
+                if v and v[r] then
+                    p.Text = v[r]
+                else
+                    p.Text = "[" .. r .. "]"
+                end
+            end
+        end
+    end
+
+    function j.ChangeTranslationKey(l, m, p)
+        if j.Localization and j.Localization.Enabled then
+            local r = string.match(p, "^" .. j.Localization.Prefix .. "(.+)")
+            if r then
+                for u, v in ipairs(j.LocalizationObjects) do
+                    if v.Object == m then
+                        v.TranslationId = r
+                        j.SetLangForObject(u)
+                        return
+                    end
+                end
+                table.insert(j.LocalizationObjects, {
+                    TranslationId = r,
+                    Object = m
+                })
+                j.SetLangForObject(#j.LocalizationObjects)
+            end
+        end
+    end
+
+    function j.UpdateLang(l)
+        if l then j.Language = l end
+        for m = 1, #j.LocalizationObjects do
+            local p = j.LocalizationObjects[m]
+            if p.Object and p.Object.Parent ~= nil then
+                j.SetLangForObject(m)
+            else
+                j.LocalizationObjects[m] = nil
+            end
+        end
+    end
+
+    function j.SetLanguage(l)
+        j.Language = l
+        j.UpdateLang()
+    end
+
+    -- 图标管理
+    function j.Icon(l)
+        return h.Icon(l)
+    end
+
+    function j.AddIcons(l, m)
+        return h.AddIcons(l, m)
+    end
+
+    -- UI创建
+    function j.New(l, m, p)
+        local r = Instance.new(l)
+        -- 应用默认属性
+        for u, v in next, j.DefaultProperties[l] or {} do
+            r[u] = v
+        end
+        -- 应用自定义属性
+        for x, z in next, m or {} do
+            if x ~= "ThemeTag" then
+                r[x] = z
+            end
+            -- 本地化处理
+            if j.Localization and j.Localization.Enabled and x == "Text" then
+                local A = string.match(z, "^" .. j.Localization.Prefix .. "(.+)")
+                if A then
+                    local B = #j.LocalizationObjects + 1
+                    j.LocalizationObjects[B] = { TranslationId = A, Object = r }
+                    j.SetLangForObject(B)
+                end
+            end
+        end
+        -- 添加子元素
+        for A, B in next, p or {} do
+            B.Parent = r
+        end
+        -- 主题标签处理
+        if m and m.ThemeTag then
+            j.AddThemeObject(r, m.ThemeTag)
+        end
+        -- 字体对象处理
+        if m and m.FontFace then
+            j.AddFontObject(r)
+        end
+        return r
+    end
+
+    -- 动画创建
+    function j.Tween(l, m, p, ...)
+        return f:Create(l, TweenInfo.new(m, ...), p)
+    end
+
+    -- 圆角帧创建
+    function j.NewRoundFrame(l, m, p, r, x, z)
+        local function getImageForType(A)
+            return A == "Squircle" and "rbxassetid://80999662900595"
+                or A == "SquircleOutline" and "rbxassetid://117788349049947"
+                or A == "SquircleOutline2" and "rbxassetid://117817408534198"
+                or A == "Squircle-Outline" and "rbxassetid://117817408534198"
+                or A == "Shadow-sm" and "rbxassetid://84825982946844"
+                or A == "Squircle-TL-TR" and "rbxassetid://73569156276236"
+                or A == "Squircle-BL-BR" and "rbxassetid://93853842912264"
+                or A == "Squircle-TL-TR-Outline" and "rbxassetid://136702870075563"
+                or A == "Squircle-BL-BR-Outline" and "rbxassetid://75035847706564"
+                or A == "Square" and "rbxassetid://82909646051652"
+                or A == "Square-Outline" and "rbxassetid://72946211851948"
+        end
+
+        local function getSliceCenterForType(A)
+            return A ~= "Shadow-sm" and Rect.new(256, 256, 256, 256) or Rect.new(512, 512, 512, 512)
+        end
+
+        local A = j.New(x and "ImageButton" or "ImageLabel", {
+            Image = getImageForType(m),
+            ScaleType = "Slice",
+            SliceCenter = getSliceCenterForType(m),
+            SliceScale = 1,
+            BackgroundTransparency = 1,
+            ThemeTag = p.ThemeTag and p.ThemeTag
+        }, r)
+
+        -- 应用自定义属性
+        for B, C in pairs(p or {}) do
+            if B ~= "ThemeTag" then
+                A[B] = C
+            end
+        end
+
+        -- 缩放更新函数
+        local function UpdateSliceScale(F)
+            local G = m ~= "Shadow-sm" and (F / 256) or (F / 512)
+            A.SliceScale = math.max(G, 0.0001)
+        end
+
+        local F = {}
+        function F.SetRadius(G, H)
+            UpdateSliceScale(H)
+        end
+
+        function F.SetType(G, H)
+            m = H
+            A.Image = getImageForType(H)
+            A.SliceCenter = getSliceCenterForType(H)
+            UpdateSliceScale(l)
+        end
+
+        function F.UpdateShape(G, H, J)
+            if J then
+                m = J
+                A.Image = getImageForType(J)
+                A.SliceCenter = getSliceCenterForType(J)
+            end
+            if H then
+                l = H
+            end
+            UpdateSliceScale(l)
+        end
+
+        function F.GetRadius(G)
+            return l
+        end
+
+        function F.GetType(G)
+            return m
+        end
+
+        UpdateSliceScale(l)
+        return A, z and F or nil
+    end
+
+    -- 拖拽功能
+    function j.SetDraggable(p)
+        j.CanDraggable = p
+    end
+
+    function j.Drag(p, r, x)
+        local z
+        local A, B, C, F
+        local G = { CanDraggable = true }
+
+        if not r or type(r) ~= "table" then
+            r = { p }
+        end
+
+        local function update(H)
+            local J = H.Position - C
+            j.Tween(p, 0.02, {
+                Position = UDim2.new(
+                    F.X.Scale, F.X.Offset + J.X,
+                    F.Y.Scale, F.Y.Offset + J.Y
+                )
+            }):Play()
+        end
+
+        -- 输入开始监听
+        for H, J in pairs(r) do
+            J.InputBegan:Connect(function(L)
+                if (L.UserInputType == Enum.UserInputType.MouseButton1 or L.UserInputType == Enum.UserInputType.Touch) and G.CanDraggable then
+                    if z == nil then
+                        z = J
+                        A = true
+                        C = L.Position
+                        F = p.Position
+                        if x and type(x) == "function" then
+                            x(true, z)
+                        end
+                        -- 输入状态变化监听
+                        L.Changed:Connect(function()
+                            if L.UserInputState == Enum.UserInputState.End then
+                                A = false
+                                z = nil
+                                if x and type(x) == "function" then
+                                    x(false, z)
+                                end
+                            end
+                        end)
+                    end
+                end
+            end)
+
+            -- 输入变化监听
+            J.InputChanged:Connect(function(L)
+                if z == J and A then
+                    if L.UserInputType == Enum.UserInputType.MouseMovement or L.UserInputType == Enum.UserInputType.Touch then
+                        B = L
+                    end
+                end
+            end)
+        end
+
+        -- 全局输入变化监听
+        e.InputChanged:Connect(function(L)
+            if L == B and A and z ~= nil then
+                if G.CanDraggable then
+                    update(L)
+                end
+            end
+        end)
+
+        function G.Set(L, M)
+            G.CanDraggable = M
+        end
+
+        return G
+    end
+
+    -- 图像加载（含缓存，魔改）
+    function j.Image(p, r, x, z, A, B, C)
+        local function SanitizeFilename(F)
+            F = F:gsub("[%s/\\:*?\"<>|]+", "-")
+            F = F:gsub("[^%w%-_%.]", "")
+            return F
+        end
+
+        z = z or "Temp"
+        r = SanitizeFilename(r)
+        local cachePath = j.IconCachePath .. SanitizeFilename(p)
+
+        local F = j.New("Frame", {
+            Size = UDim2.new(0, 0, 0, 0),
+            BackgroundTransparency = 1,
+        }, {
+            j.New("ImageLabel", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+                ScaleType = "Crop",
+                ThemeTag = (j.Icon(p) or C) and {
+                    ImageColor3 = B and "Icon" or nil
+                } or nil,
+            }, {
+                j.New("UICorner", {
+                    CornerRadius = UDim.new(0, x)
+                })
+            })
+        })
+
+        -- 优先加载缓存
+        if isfile(cachePath) then
+            F.ImageLabel.Image = getcustomasset(cachePath)
+        elseif j.Icon(p) then
+            F.ImageLabel:Destroy()
+            local G = h.Image{
+                Icon = p,
+                Size = UDim2.new(1, 0, 1, 0),
+                Colors = {
+                    (B and "Icon" or false),
+                    "Button"
+                }
+            }.IconFrame
+            G.Parent = F
+        elseif string.find(p, "http") then
+            local G = "WindUI/" .. z .. "/Assets/." .. A .. "-" .. r .. ".png"
+            local H, J = pcall(function()
+                task.spawn(function()
+                    if not isfile(G) then
+                        local H = j.Request{
+                            Url = p,
+                            Method = "GET",
+                        }.Body
+                        writefile(G, H)
+                        -- 保存到缓存
+                        writefile(cachePath, H)
+                    end
+                    F.ImageLabel.Image = getcustomasset(G)
+                end)
+            end)
+            if not H then
+                warn("[ WindUI.Creator ]  '" .. identifyexecutor() .. "' doesnt support the URL Images. Error: " .. J)
+                F:Destroy()
+            end
+        elseif p == "" then
+            F.Visible = false
+        else
+            F.ImageLabel.Image = p
+            -- 保存到缓存（rbxassetid）
+            if p:sub(1, 13) == "rbxassetid://" then
+                local H = j.Request{ Url = "https://assetdelivery.roblox.com/v1/asset?id=" .. p:sub(14), Method = "GET" }.Body
+                writefile(cachePath, H)
+            end
+        end
+
+        return F
+    end
+
+    -- 魔改：3D边框创建
+    function j.Create3DBorder(parent, cornerRadius)
+        local border3D = j.New("Frame", {
+            Size = UDim2.new(1, 12, 1, 12),
+            Position = UDim2.new(0, -6, 0, -6),
+            BackgroundTransparency = 1,
+            Parent = parent,
+            ZIndex = -1
+        }, {
+            j.NewRoundFrame(cornerRadius + 2, "Squircle", {
+                Size = UDim2.new(1, 0, 1, 0),
+                ImageColor3 = Color3.new(0, 0, 0),
+                ImageTransparency = 0.2,
+            })
+        })
+
+        -- 鼠标跟随光影
+        UserInputService.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                local viewport = Workspace.CurrentCamera.ViewportSize
+                local lightX = input.Position.X / viewport.X
+                local lightY = input.Position.Y / viewport.Y
+                border3D.Position = UDim2.new(0, -6 + (lightX - 0.5) * 8, 0, -6 + (lightY - 0.5) * 8)
+            end
+        end)
+
+        return border3D
+    end
+
+    -- 魔改：霓虹光效
+    function j.AddNeonEffect(elem, enable)
+        if enable then
+            local neonStroke = j.New("UIStroke", {
+                Thickness = 2,
+                Color = Color3.fromHSV(tick() % 1, 1, 1),
+                Parent = elem
+            })
+            -- 霓虹色循环
+            RunService.RenderStepped:Connect(function()
+                neonStroke.Color = Color3.fromHSV(tick() % 1, 1, 1)
+            end)
+            return neonStroke
+        end
+    end
+
+    -- 魔改：故障效果
+    function j.AddGlitchEffect(elem, duration)
+        local glitchTimer = 0
+        local conn = RunService.RenderStepped:Connect(function(dt)
+            glitchTimer = glitchTimer + dt
+            if glitchTimer < duration then
+                elem.Position = UDim2.new(0.5, math.random(-3, 3), 0.5, math.random(-3, 3))
+                local bg = elem:FindFirstChild("Background")
+                if bg then
+                    bg.ImageColor3 = Color3.fromHSV(tick() % 1, 0.3, 1)
+                end
+            else
+                elem.Position = UDim2.new(0.5, 0, 0.5, 0)
+                conn:Disconnect()
+            end
+        end)
+    end
+
+    -- 魔改：AI自动补全
+    function j.EnableAIAutoComplete(inputElem, apiKey)
+        local isTyping = false
+        j.AddSignal(inputElem:GetPropertyChangedSignal("Text"), function()
+            local text = inputElem.Text
+            if #text > 3 and not isTyping then
+                isTyping = true
+                task.spawn(function()
+                    local success, res = pcall(function()
+                        return j.Request({
+                            Url = "https://api.openai.com/v1/completions",
+                            Method = "POST",
+                            Headers = {
+                                ["Authorization"] = "Bearer " .. apiKey,
+                                ["Content-Type"] = "application/json"
+                            },
+                            Body = HttpService:JSONEncode({
+                                model = "text-davinci-003",
+                                prompt = text,
+                                max_tokens = 10,
+                                temperature = 0.7
+                            })
+                        })
+                    end)
+                    if success and res.StatusCode == 200 then
+                        local data = HttpService:JSONDecode(res.Body)
+                        inputElem.PlaceholderText = text .. (data.choices[1].text or "")
+                    end
+                    isTyping = false
+                end)
+            end
+        end)
+    end
+
+    -- 魔改：语音控制
+    function j.EnableVoiceControl(elem, voiceCmd, callback)
+        local voiceService = game:GetService("VoiceChatService")
+        if voiceService then
+            voiceService.VoiceDetected:Connect(function(voiceData)
+                local cmd = string.lower(voiceData.Text:gsub("%s+", ""))
+                if cmd == string.lower(voiceCmd:gsub("%s+", "")) then
+                    j.SafeCallback(callback)
+                end
+            end)
+        end
+    end
+
+    -- 魔改：多点触控
+    function j.AddMultiTouchSupport(elem)
+        local touchPoints = {}
+        local lastDist = 0
+        local lastAngle = 0
+
+        j.AddSignal(UserInputService.InputChanged, function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                -- 记录触控点
+                if input.UserInputState == Enum.UserInputState.Begin then
+                    table.insert(touchPoints, input)
+                elseif input.UserInputState == Enum.UserInputState.End then
+                    for i, t in ipairs(touchPoints) do
+                        if t == input then table.remove(touchPoints, i) end
+                    end
+                end
+
+                -- 双指操作
+                if #touchPoints == 2 then
+                    local p1 = touchPoints[1].Position
+                    local p2 = touchPoints[2].Position
+                    local currDist = (p1 - p2).Magnitude
+                    local currAngle = math.deg(math.atan2(p2.Y - p1.Y, p2.X - p1.X))
+
+                    -- 缩放
+                    if lastDist > 0 then
+                        local scale = currDist / lastDist
+                        elem.Size = UDim2.new(0, elem.AbsoluteSize.X * scale, 0, elem.AbsoluteSize.Y * scale)
+                    end
+
+                    -- 旋转
+                    if lastAngle ~= 0 and elem:FindFirstChildOfClass("UIGradient") then
+                        local angleDiff = currAngle - lastAngle
+                        elem.UIGradient.Rotation = elem.UIGradient.Rotation + angleDiff
+                    end
+
+                    lastDist = currDist
+                    lastAngle = currAngle
+                else
+                    lastDist = 0
+                    lastAngle = 0
+                end
+            end
+        end)
+    end
+
+    h.Init(j.New, "Icon")
+    return j
+end
+
+-- 模块b：本地化模块
+function a.b()
+    local b = {}
+    function b.New(e, f, g)
+        local h = {
+            Enabled = f.Enabled or false,
+            Translations = f.Translations or {},
+            Prefix = f.Prefix or "loc:",
+            DefaultLanguage = f.DefaultLanguage or "en"
+        }
+        g.Localization = h
+        return h
+    end
+    return b
+end
+
+-- 模块c：通知模块
+function a.c()
+    local b = a.load'a'
+    local e = b.New
+    local f = b.Tween
+    local g = {
+        Size = UDim2.new(0, 300, 1, -156),
+        SizeLower = UDim2.new(0, 300, 1, -56),
+        UICorner = 13,
+        UIPadding = 14,
+        Holder = nil,
+        NotificationIndex = 0,
+        Notifications = {}
+    }
+
+    function g.Init(h)
+        local i = { Lower = false }
+        function i.SetLower(j)
+            i.Lower = j
+            i.Frame.Size = j and g.SizeLower or g.Size
+        end
+
+        i.Frame = e("Frame", {
+            Position = UDim2.new(1, -29, 0, 56),
+            AnchorPoint = Vector2.new(1, 0),
+            Size = g.Size,
+            Parent = h,
+            BackgroundTransparency = 1,
+        }, {
+            e("UIListLayout", {
+                HorizontalAlignment = "Center",
+                SortOrder = "LayoutOrder",
+                VerticalAlignment = "Bottom",
+                Padding = UDim.new(0, 8),
+            }),
+            e("UIPadding", {
+                PaddingBottom = UDim.new(0, 29)
+            })
+        })
+
+        return i
+    end
+
+    function g.New(h)
+        local i = {
+            Title = h.Title or "Notification",
+            Content = h.Content or nil,
+            Icon = h.Icon or nil,
+            IconThemed = h.IconThemed,
+            Background = h.Background,
+            BackgroundImageTransparency = h.BackgroundImageTransparency,
+            Duration = h.Duration or 5,
+            Buttons = h.Buttons or {},
+            CanClose = true,
+            UIElements = {},
+            Closed = false,
+        }
+
+        if i.CanClose == nil then i.CanClose = true end
+        g.NotificationIndex = g.NotificationIndex + 1
+        g.Notifications[g.NotificationIndex] = i
+
+        -- 图标创建
+        local j
+        if i.Icon then
+            j = b.Image(
+                i.Icon,
+                i.Title .. ":" .. i.Icon,
+                0,
+                h.Window,
+                "Notification",
+                i.IconThemed
+            )
+            j.Size = UDim2.new(0, 26, 0, 26)
+            j.Position = UDim2.new(0, g.UIPadding, 0, g.UIPadding)
+        end
+
+        -- 关闭按钮
+        local l
+        if i.CanClose then
+            l = e("ImageButton", {
+                Image = b.Icon"x"[1],
+                ImageRectSize = b.Icon"x"[2].ImageRectSize,
+                ImageRectOffset = b.Icon"x"[2].ImageRectPosition,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 16, 0, 16),
+                Position = UDim2.new(1, -g.UIPadding, 0, g.UIPadding),
+                AnchorPoint = Vector2.new(1, 0),
+                ThemeTag = { ImageColor3 = "Text" },
+                ImageTransparency = .4,
+            }, {
+                e("TextButton", {
+                    Size = UDim2.new(1, 8, 1, 8),
+                    BackgroundTransparency = 1,
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                    Text = "",
+                })
+            })
+        end
+
+        -- 进度条
+        local m = e("Frame", {
+            Size = UDim2.new(0, 0, 1, 0),
+            BackgroundTransparency = .95,
+            ThemeTag = { BackgroundColor3 = "Text" },
+        })
+
+        -- 内容容器
+        local p = e("Frame", {
+            Size = UDim2.new(1, i.Icon and -28 - g.UIPadding or 0, 1, 0),
+            Position = UDim2.new(1, 0, 0, 0),
+            AnchorPoint = Vector2.new(1, 0),
+            BackgroundTransparency = 1,
+            AutomaticSize = "Y",
+        }, {
+            e("UIPadding", {
+                PaddingTop = UDim.new(0, g.UIPadding),
+                PaddingLeft = UDim.new(0, g.UIPadding),
+                PaddingRight = UDim.new(0, g.UIPadding),
+                PaddingBottom = UDim.new(0, g.UIPadding),
+            }),
+            e("TextLabel", {
+                AutomaticSize = "Y",
+                Size = UDim2.new(1, -30 - g.UIPadding, 0, 0),
+                TextWrapped = true,
+                TextXAlignment = "Left",
+                RichText = true,
+                BackgroundTransparency = 1,
+                TextSize = 16,
+                ThemeTag = { TextColor3 = "Text" },
+                Text = i.Title,
+                FontFace = Font.new(b.Font, Enum.FontWeight.Medium)
+            }),
+            e("UIListLayout", {
+                Padding = UDim.new(0, g.UIPadding / 3)
+            })
+        })
+
+        -- 添加内容
+        if i.Content then
+            e("TextLabel", {
+                AutomaticSize = "Y",
+                Size = UDim2.new(1, 0, 0, 0),
+                TextWrapped = true,
+                TextXAlignment = "Left",
+                RichText = true,
+                BackgroundTransparency = 1,
+                TextTransparency = .4,
+                TextSize = 15,
+                ThemeTag = { TextColor3 = "Text" },
+                Text = i.Content,
+                FontFace = Font.new(b.Font, Enum.FontWeight.Medium),
+                Parent = p
+            })
+        end
+
+        -- 主容器
+        local r = b.NewRoundFrame(g.UICorner, "Squircle", {
+            Size = UDim2.new(1, 0, 0, 0),
+            Position = UDim2.new(2, 0, 1, 0),
+            AnchorPoint = Vector2.new(0, 1),
+            AutomaticSize = "Y",
+            ImageTransparency = .05,
+            ThemeTag = { ImageColor3 = "Background" },
+        }, {
+            e("CanvasGroup", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+            }, {
+                m,
+                e("UICorner", { CornerRadius = UDim.new(0, g.UICorner) })
+            }),
+            e("ImageLabel", {
+                Name = "Background",
+                Image = i.Background,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 1, 0),
+                ScaleType = "Crop",
+                ImageTransparency = i.BackgroundImageTransparency
+            }, {
+                e("UICorner", { CornerRadius = UDim.new(0, g.UICorner) })
+            }),
+            p,
+            j, l,
+        })
+
+        -- 根容器
+        local x = e("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.new(1, 0, 0, 0),
+            Parent = h.Holder
+        }, { r })
+
+        -- 关闭函数
+        function i.Close(z)
+            if not i.Closed then
+                i.Closed = true
+                f(x, 0.45, { Size = UDim2.new(1, 0, 0, -8) }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                f(r, 0.55, { Position = UDim2.new(2, 0, 1, 0) }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                task.wait(.45)
+                x:Destroy()
+            end
+        end
+
+        -- 入场动画与自动关闭
+        task.spawn(function()
+            task.wait()
+            f(x, 0.45, { Size = UDim2.new(1, 0, 0, r.AbsoluteSize.Y) }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+            f(r, 0.45, { Position = UDim2.new(0, 0, 1, 0) }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+            if i.Duration then
+                f(m, i.Duration, { Size = UDim2.new(1, 0, 1, 0) }, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut):Play()
+                task.wait(i.Duration)
+                i:Close()
+            end
+        end)
+
+        -- 关闭按钮绑定
+        if l then
+            b.AddSignal(l.TextButton.MouseButton1Click, function()
+                i:Close()
+            end)
+        end
+
+        return i
+    end
+
+    return g
+end
+
+-- 模块d：主题定义
+function a.d()
+    return {
+        Dark = {
+            Name = "Dark",
+            Accent = "#18181b",
+            Dialog = "#161616",
+            Outline = "#FFFFFF",
+            Text = "#FFFFFF",
+            Placeholder = "#999999",
+            Background = "#101010",
+            Button = "#52525b",
+            Icon = "#a1a1aa",
+        },
+        Light = {
+            Name = "Light",
+            Accent = "#FFFFFF",
+            Dialog = "#f4f4f5",
+            Outline = "#09090b",
+            Text = "#000000",
+            Placeholder = "#777777",
+            Background = "#e4e4e7",
+            Button = "#18181b",
+            Icon = "#52525b",
+        },
+        Rose = {
+            Name = "Rose",
+            Accent = "#be185d",
+            Dialog = "#4c0519",
+            Outline = "#fecdd3",
+            Text = "#fdf2f8",
+            Placeholder = "#f9a8d4",
+            Background = "#1f0308",
+            Button = "#e11d48",
+            Icon = "#fb7185",
+        },
+        Plant = {
+            Name = "Plant",
+            Accent = "#166534",
+            Dialog = "#052e16",
+            Outline = "#bbf7d0",
+            Text = "#f0fdf4",
+            Placeholder = "#86efac",
+            Background = "#0a1b0f",
+            Button = "#16a34a",
+            Icon = "#4ade80",
+        },
+        Red = {
+            Name = "Red",
+            Accent = "#991b1b",
+            Dialog = "#450a0a",
+            Outline = "#fecaca",
+            Text = "#fef2f2",
+            Placeholder = "#f87171",
+            Background = "#1c0606",
+            Button = "#dc2626",
+            Icon = "#ef4444",
+        },
+        Indigo = {
+            Name = "Indigo",
+            Accent = "#3730a3",
+            Dialog = "#1e1b4b",
+            Outline = "#c7d2fe",
+            Text = "#f1f5f9",
+            Placeholder = "#a5b4fc",
+            Background = "#0f0a2e",
+            Button = "#4f46e5",
+            Icon = "#6366f1",
+        },
+        Sky = {
+            Name = "Sky",
+            Accent = "#0369a1",
+            Dialog = "#0c4a6e",
+            Outline = "#bae6fd",
+            Text = "#f0f9ff",
+            Placeholder = "#7dd3fc",
+            Background = "#041f2e",
+            Button = "#0284c7",
+            Icon = "#0ea5e9",
+        },
+        Violet = {
+            Name = "Violet",
+            Accent = "#6d28d9",
+            Dialog = "#3c1361",
+            Outline = "#ddd6fe",
+            Text = "#faf5ff",
+            Placeholder = "#c4b5fd",
+            Background = "#1e0a3e",
+            Button = "#7c3aed",
+            Icon = "#8b5cf6",
+        },
+        Amber = {
+            Name = "Amber",
+            Accent = "#b45309",
+            Dialog = "#451a03",
+            Outline = "#fde68a",
+            Text = "#fffbeb",
+            Placeholder = "#fcd34d",
+            Background = "#1c1003",
+            Button = "#d97706",
+            Icon = "#f59e0b",
+        },
+        Emerald = {
+            Name = "Emerald",
+            Accent = "#047857",
+            Dialog = "#022c22",
+            Outline = "#a7f3d0",
+            Text = "#ecfdf5",
+            Placeholder = "#6ee7b7",
+            Background = "#011411",
+            Button = "#059669",
+            Icon = "#10b981",
+        },
+        Midnight = {
+            Name = "Midnight",
+            Accent = "#1e3a8a",
+            Dialog = "#0c1e42",
+            Outline = "#bfdbfe",
+            Text = "#dbeafe",
+            Placeholder = "#60a5fa",
+            Background = "#0a0f1e",
+            Button = "#2563eb",
+            Icon = "#3b82f6",
+        },
+        Crimson = {
+            Name = "Crimson",
+            Accent = "#b91c1c",
+            Dialog = "#450a0a",
+            Outline = "#fca5a5",
+            Text = "#fef2f2",
+            Placeholder = "#9ca3af",
+            Background = "#0c0404",
+            Button = "#991b1b",
+            Icon = "#dc2626",
+        },
+        MonokaiPro = {
+            Name = "Monokai Pro",
+            Accent = "#fc9867",
+            Dialog = "#1e1e1e",
+            Outline = "#78dce8",
+            Text = "#fcfcfa",
+            Placeholder = "#939293",
+            Background = "#191622",
+            Button = "#ab9df2",
+            Icon = "#a9dc76",
+        },
+        CottonCandy = {
+            Name = "Cotton Candy",
+            Accent = "#ec4899",
+            Dialog = "#2d1b3d",
+            Outline = "#f9a8d4",
+            Text = "#fdf2f8",
+            Placeholder = "#c084fc",
+            Background = "#1a0b2e",
+            Button = "#d946ef",
+            Icon = "#06b6d4",
+        },
+    }
+end
+-- 模块e：Platoboost服务（完整加密与验证逻辑）
+function a.e()
+    local b = 4294967296; local e = b - 1
+    local function c(f, g)
+        local h, i = 0, 1
+        while f ~= 0 or g ~= 0 do
+            local j, l = f % 2, g % 2
+            local m = (j + l) % 2
+            h = h + m * i
+            f = math.floor(f / 2)
+            g = math.floor(g / 2)
+            i = i * 2
+        end
+        return h % b
+    end
+
+    local function k(f, g, h, ...)
+        local i
+        if g then
+            f = f % b; g = g % b
+            i = c(f, g)
+            if h then i = k(i, h, ...) end
+            return i
+        elseif f then
+            return f % b
+        else
+            return 0
+        end
+    end
+
+    local function n(f, g, h, ...)
+        local i
+        if g then
+            f = f % b; g = g % b
+            i = (f + g - c(f, g)) / 2
+            if h then i = n(i, h, ...) end
+            return i
+        elseif f then
+            return f % b
+        else
+            return e
+        end
+    end
+
+    local function o(f) return e - f end
+    local function q(f, g)
+        if g < 0 then return lshift(f, -g) end
+        return math.floor(f % 4294967296 / 2 ^ g)
+    end
+
+    local function s(f, g)
+        if g > 31 or g < -31 then return 0 end
+        return q(f % b, g)
+    end
+
+    local function lshift(f, g)
+        if g < 0 then return s(f, -g) end
+        return f * 2 ^ g % 4294967296
+    end
+
+    local function t(f, g)
+        f = f % b; g = g % 32
+        local h = n(f, 2 ^ g - 1)
+        return s(f, g) + lshift(h, 32 - g)
+    end
+
+    local f = {
+        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+    }
+
+    local function w(g)
+        return string.gsub(g, ".", function(h)
+            return string.format("%02x", string.byte(h))
+        end)
+    end
+
+    local function y(g, h)
+        local i = ""
+        for j = 1, h do
+            local l = g % 256
+            i = string.char(l) .. i
+            g = (g - l) / 256
+        end
+        return i
+    end
+
+    local function D(g, h)
+        local i = 0
+        for j = h, h + 3 do
+            i = i * 256 + string.byte(g, j)
+        end
+        return i
+    end
+
+    local function E(g, h)
+        local i = 64 - (h + 9) % 64
+        h = y(8 * h, 8)
+        g = g .. "\128" .. string.rep("\0", i) .. h
+        assert(#g % 64 == 0)
+        return g
+    end
+
+    local function I(g)
+        g[1] = 0x6a09e667; g[2] = 0xbb67ae85; g[3] = 0x3c6ef372; g[4] = 0xa54ff53a
+        g[5] = 0x510e527f; g[6] = 0x9b05688c; g[7] = 0x1f83d9ab; g[8] = 0x5be0cd19
+        return g
+    end
+
+    local function K(g, h, i)
+        local j = {}
+        for l = 1, 16 do
+            j[l] = D(g, h + (l - 1) * 4)
+        end
+        for l = 17, 64 do
+            local m = j[l - 15]
+            local p = k(t(m, 7), t(m, 18), s(m, 3))
+            m = j[l - 2]
+            j[l] = (j[l - 16] + p + j[l - 7] + k(t(m, 17), t(m, 19), s(m, 10))) % b
+        end
+        local l, m, p, r, x, z, A, B = i[1], i[2], i[3], i[4], i[5], i[6], i[7], i[8]
+        for C = 1, 64 do
+            local F = k(t(l, 2), t(l, 13), t(l, 22))
+            local G = k(n(l, m), n(l, p), n(m, p))
+            local H = (F + G) % b
+            local J = k(t(x, 6), t(x, 11), t(x, 25))
+            local L = k(n(x, z), n(o(x), A))
+            local M = (B + J + L + f[C] + j[C]) % b
+            B = A; A = z; z = x; x = (r + M) % b; r = p; p = m; m = l; l = (M + H) % b
+        end
+        i[1] = (i[1] + l) % b; i[2] = (i[2] + m) % b; i[3] = (i[3] + p) % b; i[4] = (i[4] + r) % b
+        i[5] = (i[5] + x) % b; i[6] = (i[6] + z) % b; i[7] = (i[7] + A) % b; i[8] = (i[8] + B) % b
+    end
+
+    local function Z(g)
+        g = E(g, #g)
+        local h = I{}
+        for i = 1, #g, 64 do
+            K(g, i, h)
+        end
+        return w(y(h[1], 4) .. y(h[2], 4) .. y(h[3], 4) .. y(h[4], 4) .. y(h[5], 4) .. y(h[6], 4) .. y(h[7], 4) .. y(h[8], 4))
+    end
+
+    local g; local h = { ["\\"] = "\\", ["\""] = "\"", ["\b"] = "b", ["\f"] = "f", ["\n"] = "n", ["\r"] = "r", ["\t"] = "t" }
+    local i = { ["/"] = "/" }
+    for j, l in pairs(h) do i[l] = j end
+    local m = function(m) return "\\" .. (h[m] or string.format("u%04x", m:byte())) end
+    local p = function(p) return "null" end
+    local r = function(r, x)
+        local z = {}
+        x = x or {}
+        if x[r] then error"circular reference" end
+        x[r] = true
+        if rawget(r, 1) ~= nil or next(r) == nil then
+            local A = 0
+            for B in pairs(r) do
+                if type(B) ~= "number" then error"invalid table: mixed or invalid key types" end
+                A = A + 1
+            end
+            if A ~= #r then error"invalid table: sparse array" end
+            for C, F in ipairs(r) do
+                table.insert(z, g(F, x))
+            end
+            x[r] = nil
+            return "[" .. table.concat(z, ",") .. "]"
+        else
+            for A, B in pairs(r) do
+                if type(A) ~= "string" then error"invalid table: mixed or invalid key types" end
+                table.insert(z, g(A, x) .. ":" .. g(B, x))
+            end
+            x[r] = nil
+            return "{" .. table.concat(z, ",") .. "}"
+        end
+    end
+
+    local x = function(x) return '"' .. x:gsub('[%z\1-\31\\"]', m) .. '"' end
+    local z = function(z)
+        if z ~= z or z <= -math.huge or z >= math.huge then
+            error("unexpected number value '" .. tostring(z) .. "'")
+        end
+        return string.format("%.14g", z)
+    end
+
+    local A = { ["nil"] = p, table = r, string = x, number = z, boolean = tostring }
+    g = function(B, C)
+        local F = type(B)
+        local G = A[F]
+        if G then return G(B, C) end
+        error("unexpected type '" .. F .. "'")
+    end
+
+    local B = function(B) return g(B) end
+    local C; local F = function(...)
+        local F = {}
+        for G = 1, select("#", ...) do
+            F[select(G, ...)] = true
+        end
+        return F
+    end
+
+    local G = F(" ", "\t", "\r", "\n")
+    local H = F(" ", "\t", "\r", "\n", "]", "}", ",")
+    local J = F("\\", "/", '"', "b", "f", "n", "r", "t", "u")
+    local L = F("true", "false", "null")
+    local M = { ["true"] = true, ["false"] = false, null = nil }
+
+    local N = function(N, O, P, Q)
+        for R = O, #N do
+            if P[N:sub(R, R)] ~= Q then return R end
+        end
+        return #N + 1
+    end
+
+    local O = function(O, P, Q)
+        local R = 1; local S = 1
+        for T = 1, P - 1 do
+            S = S + 1
+            if O:sub(T, T) == "\n" then R = R + 1; S = 1 end
+        end
+        error(string.format("%s at line %d col %d", Q, R, S))
+    end
+
+    local P = function(P)
+        local Q = math.floor
+        if P <= 0x7f then return string.char(P)
+        elseif P <= 0x7ff then return string.char(Q(P/64)+192, P%64+128)
+        elseif P <= 0xffff then return string.char(Q(P/4096)+224, Q(P%4096/64)+128, P%64+128)
+        elseif P <= 0x10ffff then return string.char(Q(P/262144)+240, Q(P%262144/4096)+128, Q(P%4096/64)+128, P%64+128)
+        end
+        error(string.format("invalid unicode codepoint '%x'", P))
+    end
+
+    local Q = function(Q)
+        local R = tonumber(Q:sub(1, 4), 16)
+        local S = tonumber(Q:sub(7, 10), 16)
+        if S then return P((R - 0xd800) * 0x400 + S - 0xdc00 + 0x10000)
+        else return P(R) end
+    end
+
+    local R = function(R, S)
+        local T = ""
+        local U = S + 1; local V = U
+        while U <= #R do
+            local W = R:byte(U)
+            if W < 32 then O(R, U, "control character in string")
+            elseif W == 92 then
+                T = T .. R:sub(V, U - 1)
+                U = U + 1
+                local X = R:sub(U, U)
+                if X == "u" then
+                    local Y = R:match("^[dD][89aAbB]%x%x\\u%x%x%x%x", U + 1) or R:match("^%x%x%x%x", U + 1) or O(R, U - 1, "invalid unicode escape in string")
+                    T = T .. Q(Y)
+                    U = U + #Y
+                else
+                    if not J[X] then O(R, U - 1, "invalid escape char '" .. X .. "' in string") end
+                    T = T .. i[X]
+                end
+                V = U + 1
+            elseif W == 34 then
+                T = T .. R:sub(V, U - 1)
+                return T, U + 1
+            end
+            U = U + 1
+        end
+        O(R, S, "expected closing quote for string")
+    end
+
+    local S = function(S, T)
+        local U = N(S, T, H)
+        local V = S:sub(T, U - 1)
+        local W = tonumber(V)
+        if not W then O(S, T, "invalid number '" .. V .. "'") end
+        return W, U
+    end
+
+    local T = function(T, U)
+        local V = N(T, U, H)
+        local W = T:sub(U, V - 1)
+        if not L[W] then O(T, U, "invalid literal '" .. W .. "'") end
+        return M[W], V
+    end
+
+    local U = function(U, V)
+        local W = {}
+        local X = 1; V = V + 1
+        while 1 do
+            local Y
+            V = N(U, V, G, true)
+            if U:sub(V, V) == "]" then V = V + 1; break end
+            Y, V = C(U, V)
+            W[X] = Y
+            X = X + 1
+            V = N(U, V, G, true)
+            local _ = U:sub(V, V)
+            V = V + 1
+            if _ == "]" then break end
+            if _ ~= "," then O(U, V, "expected ']' or ','") end
+        end
+        return W, V
+    end
+
+    local aa = function(V, W)
+        local X = {}
+        W = W + 1
+        while 1 do
+            local Y, _
+            W = N(V, W, G, true)
+            if V:sub(W, W) == "}" then W = W + 1; break end
+            if V:sub(W, W) ~= '"' then O(V, W, "expected string for key") end
+            Y, W = C(V, W)
+            W = N(V, W, G, true)
+            if V:sub(W, W) ~= ":" then O(V, W, "expected ':' after key") end
+            W = N(V, W + 1, G, true)
+            _, W = C(V, W)
+            X[Y] = _
+            W = N(V, W, G, true)
+            local aa = V:sub(W, W)
+            W = W + 1
+            if aa == "}" then break end
+            if aa ~= "," then O(V, W, "expected '}' or ','") end
+        end
+        return X, W
+    end
+
+    local V = {
+        ['"'] = R, ["0"] = S, ["1"] = S, ["2"] = S, ["3"] = S, ["4"] = S, ["5"] = S, ["6"] = S, ["7"] = S, ["8"] = S, ["9"] = S,
+        ["-"] = S, t = T, f = T, n = T, ["["] = U, ["{"] = aa
+    }
+
+    C = function(W, X)
+        local Y = W:sub(X, X)
+        local _ = V[Y]
+        if _ then return _(W, X) end
+        O(W, X, "unexpected character '" .. Y .. "'")
+    end
+
+    local W = function(W)
+        if type(W) ~= "string" then error("expected argument of type string, got " .. type(W)) end
+        local X, Y = C(W, N(W, 1, G, true))
+        Y = N(W, Y, G, true)
+        if Y <= #W then O(W, Y, "trailing garbage") end
+        return X
+    end
+
+    local X, Y, _ = B, W, Z
+    local ab = {}
+
+    function ab.New(ac, ad)
+        local ae = ac; local af = ad; local ag = true; local ah = function(ah) end
+        repeat task.wait(1) until game:IsLoaded()
+        local ai = false
+        local aj, ak, al, am, an, ao, ap, aq, ar = setclipboard or toclipboard, request or http_request or syn_request, string.char, tostring, string.sub, os.time, math.random, math.floor, gethwid or function() return Players.LocalPlayer.UserId end
+        local as, at = "", 0
+        local au = "https://api.platoboost.com"
+
+        -- 连接测试
+        local av = ak{ Url = au .. "/public/connectivity", Method = "GET" }
+        if av.StatusCode ~= 200 or av.StatusCode ~= 429 then
+            au = "https://api.platoboost.net"
+        end
+
+        -- 缓存链接
+        function cacheLink()
+            if at + (600) < ao() then
+                local aw = ak{
+                    Url = au .. "/public/start",
+                    Method = "POST",
+                    Body = X{ service = ae, identifier = _(ar()) },
+                    Headers = { ["Content-Type"] = "application/json", ["User-Agent"] = "Roblox/Exploit" }
+                }
+                if aw.StatusCode == 200 then
+                    local ax = Y(aw.Body)
+                    if ax.success == true then
+                        as = ax.data.url
+                        at = ao()
+                        return true, as
+                    else
+                        ah(ax.message)
+                        return false, ax.message
+                    end
+                elseif aw.StatusCode == 429 then
+                    local ax = "you are being rate limited, please wait 20 seconds and try again."
+                    ah(ax)
+                    return false, ax
+                end
+                local ax = "Failed to cache link."
+                ah(ax)
+                return false, ax
+            else
+                return true, as
+            end
+        end
+
+        cacheLink()
+
+        -- 随机字符串生成
+        local aw = function()
+            local aw = ""
+            for ax = 1, 16 do
+                aw = aw .. al(aq(ap() * (26)) + 97)
+            end
+            return aw
+        end
+
+        -- 非ce验证
+        for ax = 1, 5 do
+            local ay = aw()
+            task.wait(0.2)
+            if aw() == ay then
+                local az = "platoboost nonce error."
+                ah(az)
+                error(az)
+            end
+        end
+
+        -- 复制链接
+        local ax = function()
+            local ax, ay = cacheLink()
+            if ax then aj(ay) end
+        end
+
+        -- 兑换密钥
+        local ay = function(ay)
+            local az = aw()
+            local aA = au .. "/public/redeem/" .. am(ae)
+            local aB = { identifier = _(ar()), key = ay }
+            if ag then aB.nonce = az end
+
+            local aC = ak{
+                Url = aA,
+                Method = "POST",
+                Body = X(aB),
+                Headers = { ["Content-Type"] = "application/json" }
+            }
+
+            if aC.StatusCode == 200 then
+                local aD = Y(aC.Body)
+                if aD.success == true then
+                    if aD.data.valid == true then
+                        if ag then
+                            if aD.data.hash == _("true" .. "-" .. az .. "-" .. af) then
+                                return true
+                            else
+                                ah"failed to verify integrity."
+                                return false
+                            end
+                        else
+                            return true
+                        end
+                    else
+                        ah"key is invalid."
+                        return false
+                    end
+                else
+                    if an(aD.message, 1, 27) == "unique constraint violation" then
+                        ah"you already have an active key, please wait for it to expire before redeeming it."
+                        return false
+                    else
+                        ah(aD.message)
+                        return false
+                    end
+                end
+            elseif aC.StatusCode == 429 then
+                ah"you are being rate limited, please wait 20 seconds and try again."
+                return false
+            else
+                ah"server returned an invalid status code, please try again later."
+                return false
+            end
+        end
+
+        -- 验证密钥
+        local az = function(az)
+            if ai == true then
+                return false, ("A request is already being sent, please slow down.")
+            else
+                ai = true
+            end
+
+            local aA = aw()
+            local aB = au .. "/public/whitelist/" .. am(ae) .. "?identifier=" .. _(ar()) .. "&key=" .. az
+            if ag then aB = aB .. "&nonce=" .. aA end
+
+            local aC = ak{ Url = aB, Method = "GET" }
+            ai = false
+
+            if aC.StatusCode == 200 then
+                local aD = Y(aC.Body)
+                if aD.success == true then
+                    if aD.data.valid == true then
+                        if ag then
+                            if aD.data.hash == _("true" .. "-" .. aA .. "-" .. af) then
+                                return true, ""
+                            else
+                                return false, ("failed to verify integrity.")
+                            end
+                        else
+                            return true
+                        end
+                    else
+                        if an(az, 1, 4) == "KEY_" then
+                            return true, ay(az)
+                        else
+                            return false, ("Key is invalid.")
+                        end
+                    end
+                else
+                    return false, (aD.message)
+                end
+            elseif aC.StatusCode == 429 then
+                return false, ("You are being rate limited, please wait 20 seconds and try again.")
+            else
+                return false, ("Server returned an invalid status code, please try again later.")
+            end
+        end
+
+        -- 获取标志
+        local aA = function(aA)
+            local aB = aw()
+            local aC = au .. "/public/flag/" .. am(ae) .. "?name=" .. aA
+            if ag then aC = aC .. "&nonce=" .. aB end
+
+            local aD = ak{ Url = aC, Method = "GET" }
+            if aD.StatusCode == 200 then
+                local aE = Y(aD.Body)
+                if aE.success == true then
+                    if ag then
+                        if aE.data.hash == _(am(aE.data.value) .. "-" .. aB .. "-" .. af) then
+                            return aE.data.value
+                        else
+                            ah"failed to verify integrity."
+                            return nil
+                        end
+                    else
+                        return aE.data.value
+                    end
+                else
+                    ah(aE.message)
+                    return nil
+                end
+            else
+                return nil
+            end
+        end
+
+        return {
+            Verify = az,
+            GetFlag = aA,
+            Copy = ax,
+        }
+    end
+
+    return ab
+end
+
+-- 模块f：Panda Development密钥验证服务
+function a.f()
+    local aa = game:GetService"HttpService"
+    local ab = {}
+
+    function ab.New(ac)
+        local ad = gethwid or function() return Players.LocalPlayer.UserId end
+        local ae, af = request or http_request or syn_request, setclipboard or toclipboard
+
+        function ValidateKey(ag)
+            local ah = "https://pandadevelopment.net/v2_validation?key=" .. tostring(ag) .. "&service=" .. tostring(ac) .. "&hwid=" .. tostring(ad())
+            local ai, aj = pcall(function()
+                return ae{
+                    Url = ah,
+                    Method = "GET",
+                    Headers = { ["User-Agent"] = "Roblox/Exploit" }
+                }
+            end)
+
+            if ai and aj then
+                if aj.Success then
+                    local ak, al = pcall(function()
+                        return aa:JSONDecode(aj.Body)
+                    end)
+                    if ak and al then
+                        if al.V2_Authentication and al.V2_Authentication == "success" then
+                            return true, "Authenticated"
+                        else
+                            local am = al.Key_Information.Notes or "Unknown reason"
+                            return false, "Authentication failed: " .. am
+                        end
+                    else
+                        return false, "JSON decode error"
+                    end
+                else
+                    warn("[Pelinda Ov2.5] HTTP request was not successful. Code: " .. tostring(aj.StatusCode) .. " Message: " .. aj.StatusMessage)
+                    return false, "HTTP request failed: " .. aj.StatusMessage
+                end
+            else
+                return false, "Request pcall error"
+            end
+        end
+
+        function GetKeyLink()
+            return "https://pandadevelopment.net/getkey?service=" .. tostring(ac) .. "&hwid=" .. tostring(ad())
+        end
+
+        function CopyLink()
+            return af(GetKeyLink())
+        end
+
+        return {
+            Verify = ValidateKey,
+            Copy = CopyLink
+        }
+    end
+
+    return ab
+end
+
+-- 模块g：Luarmor密钥验证服务
+function a.g()
+    local aa = {}
+
+    function aa.New(ab, ac)
+        local ad = loadstring(game:HttpGet"https://sdkapi-public.luarmor.net/library.lua")()
+        local ae = setclipboard or toclipboard
+        ad.script_id = ab
+
+        function ValidateKey(af)
+            local ag = ad.check_key(af);
+            if (ag.code == "KEY_VALID") then
+                return true, "Whitelisted!"
+            elseif (ag.code == "KEY_HWID_LOCKED") then
+                return false, "Key linked to a different HWID. Please reset it using our bot"
+            elseif (ag.code == "KEY_INCORRECT") then
+                return false, "Key is wrong or deleted!"
+            else
+                return false, "Key check failed:" .. ag.message .. " Code: " .. ag.code
+            end
+        end
+
+        function CopyLink()
+            ae(tostring(ac))
+        end
+
+        return {
+            Verify = ValidateKey,
+            Copy = CopyLink
+        }
+    end
+
+    return aa
+end
+
+-- 模块h：服务管理模块（整合所有验证服务）
+function a.h()
+    return {
+        platoboost = {
+            Name = "Platoboost",
+            Icon = "rbxassetid://75920162824531",
+            Args = {"ServiceId", "Secret"},
+            New = a.load'e'.New
+        },
+        pandadevelopment = {
+            Name = "Panda Development",
+            Icon = "panda",
+            Args = {"ServiceId"},
+            New = a.load'f'.New
+        },
+        luarmor = {
+            Name = "Luarmor",
+            Icon = "rbxassetid://130918283130165",
+            Args = {"ScriptId", "Discord"},
+            New = a.load'g'.New
+        },
+    }
+end
+
+-- 模块i：包管理配置（package.json内容）
+function a.i()
+    return[[
+{
+    "name": "windui",
+    "version": "1.6.52",
+    "main": "./dist/main.lua",
+    "repository": "https://github.com/Footagesus/WindUI",
+    "discord": "https://discord.gg/ftgs-development-hub-1300692552005189632",
+    "author": "Footagesus",
+    "description": "Roblox UI Library for scripts",
+    "license": "MIT",
+    "scripts": {
+        "dev": "sh build/build.sh dev $INPUT_FILE",
+        "build": "sh build/build.sh build $INPUT_FILE",
+        "live": "python -m http.server 8642",
+        "watch": "chokidar . -i 'node_modules' -i 'dist' -i 'build' -c 'npm run dev --'",
+        "live-build": "concurrently \"npm run live\" \"npm run watch --\"",
+        "updater": "python updater/main.py"
+    },
+    "keywords": [
+        "ui-library",
+        "ui-design",
+        "script",
+        "script-hub",
+        "exploiting"
+    ],
+    "devDependencies": {
+        "chokidar-cli": "^3.0.0",
+        "concurrently": "^9.2.0"
+    }
+}]]
+end
+
+-- 模块j：按钮控件模块（含魔改交互）
+function a.j()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.New(ae, af, ag, ah, ai, aj, ak)
+        ah = ah or "Primary"
+        local al = not ak and 10 or 99
+        local am
+
+        if af and af ~= "" then
+            am = ac("ImageLabel", {
+                Image = ab.Icon(af)[1],
+                ImageRectSize = ab.Icon(af)[2].ImageRectSize,
+                ImageRectOffset = ab.Icon(af)[2].ImageRectPosition,
+                Size = UDim2.new(0, 21, 0, 21),
+                BackgroundTransparency = 1,
+                ThemeTag = {
+                    ImageColor3 = "Icon",
+                }
+            })
+        end
+
+        local an = ac("TextButton", {
+            Size = UDim2.new(0, 0, 1, 0),
+            AutomaticSize = "X",
+            Parent = ai,
+            BackgroundTransparency = 1
+        }, {
+            ab.NewRoundFrame(al, "Squircle", {
+                ThemeTag = {
+                    ImageColor3 = ah ~= "White" and "Button" or nil,
+                },
+                ImageColor3 = ah == "White" and Color3.new(1, 1, 1) or nil,
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "Squircle",
+                ImageTransparency = ah == "Primary" and 0 or ah == "White" and 0 or 1
+            }),
+            ab.NewRoundFrame(al, "Squircle", {
+                ImageColor3 = Color3.new(1, 1, 1),
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "Special",
+                ImageTransparency = ah == "Secondary" and 0.95 or 1
+            }),
+            ab.NewRoundFrame(al, "Shadow-sm", {
+                ImageColor3 = Color3.new(0, 0, 0),
+                Size = UDim2.new(1, 3, 1, 3),
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                Name = "Shadow",
+                ImageTransparency = 1,
+                Visible = not ak
+            }),
+            ab.NewRoundFrame(al, not ak and "SquircleOutline" or "SquircleOutline2", {
+                ThemeTag = {
+                    ImageColor3 = ah ~= "White" and "Outline" or nil,
+                },
+                Size = UDim2.new(1, 0, 1, 0),
+                ImageColor3 = ah == "White" and Color3.new(0, 0, 0) or nil,
+                ImageTransparency = ah == "Primary" and .95 or .85,
+                Name = "SquircleOutline",
+            }, {
+                ac("UIGradient", {
+                    Rotation = 70,
+                    Color = ColorSequence.new{
+                        ColorSequenceKeypoint.new(0.0, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 255, 255)),
+                        ColorSequenceKeypoint.new(1.0, Color3.fromRGB(255, 255, 255)),
+                    },
+                    Transparency = NumberSequence.new{
+                        NumberSequenceKeypoint.new(0.0, 0.1),
+                        NumberSequenceKeypoint.new(0.5, 1),
+                        NumberSequenceKeypoint.new(1.0, 0.1),
+                    }
+                })
+            }),
+            ab.NewRoundFrame(al, "Squircle", {
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "Frame",
+                ThemeTag = {
+                    ImageColor3 = ah ~= "White" and "Text" or nil
+                },
+                ImageColor3 = ah == "White" and Color3.new(0, 0, 0) or nil,
+                ImageTransparency = 1
+            }, {
+                ac("UIPadding", {
+                    PaddingLeft = UDim.new(0, 16),
+                    PaddingRight = UDim.new(0, 16),
+                }),
+                ac("UIListLayout", {
+                    FillDirection = "Horizontal",
+                    Padding = UDim.new(0, 8),
+                    VerticalAlignment = "Center",
+                    HorizontalAlignment = "Center",
+                }),
+                am,
+                ac("TextLabel", {
+                    BackgroundTransparency = 1,
+                    FontFace = Font.new(ab.Font, Enum.FontWeight.SemiBold),
+                    Text = ae or "Button",
+                    ThemeTag = {
+                        TextColor3 = (ah ~= "Primary" and ah ~= "White") and "Text",
+                    },
+                    TextColor3 = ah == "Primary" and Color3.new(1, 1, 1) or ah == "White" and Color3.new(0, 0, 0) or nil,
+                    AutomaticSize = "XY",
+                    TextSize = 18,
+                })
+            })
+        })
+
+        -- 魔改：hover缩放+霓虹效果
+        local hoverScale = ab.DefaultHoverScale or 1.03
+        ab.AddSignal(an.MouseEnter, function()
+            ad(an.Frame, .047, { ImageTransparency = .95 }):Play()
+            ad(an, .047, { Scale = hoverScale }):Play()
+            -- 启用霓虹效果（可选）
+            if ak then
+                ab.AddNeonEffect(an, true)
+            end
+        end)
+
+        ab.AddSignal(an.MouseLeave, function()
+            ad(an.Frame, .047, { ImageTransparency = 1 }):Play()
+            ad(an, .047, { Scale = 1 }):Play()
+        end)
+
+        ab.AddSignal(an.MouseButton1Up, function()
+            if aj then
+                aj:Close()()
+            end
+            if ag then
+                ab.SafeCallback(ag)
+            end
+        end)
+
+        return an
+    end
+
+    return aa
+end
+
+-- 模块k：输入框控件模块（含AI补全）
+function a.k()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.New(ae, af, ag, ah, ai, aj, ak)
+        ah = ah or "Input"
+        local al = ak or 10
+        local am
+
+        if af and af ~= "" then
+            am = ac("ImageLabel", {
+                Image = ab.Icon(af)[1],
+                ImageRectSize = ab.Icon(af)[2].ImageRectSize,
+                ImageRectOffset = ab.Icon(af)[2].ImageRectPosition,
+                Size = UDim2.new(0, 21, 0, 21),
+                BackgroundTransparency = 1,
+                ThemeTag = {
+                    ImageColor3 = "Icon",
+                }
+            })
+        end
+
+        local an = ah ~= "Input"
+        local ao = ac("TextBox", {
+            BackgroundTransparency = 1,
+            TextSize = 17,
+            FontFace = Font.new(ab.Font, Enum.FontWeight.Regular),
+            Size = UDim2.new(1, am and -29 or 0, 1, 0),
+            PlaceholderText = ae,
+            ClearTextOnFocus = false,
+            ClipsDescendants = true,
+            TextWrapped = an,
+            MultiLine = an,
+            TextXAlignment = "Left",
+            TextYAlignment = ah == "Input" and "Center" or "Top",
+            ThemeTag = {
+                PlaceholderColor3 = "PlaceholderText",
+                TextColor3 = "Text",
+            },
+        })
+
+        local ap = ac("Frame", {
+            Size = UDim2.new(1, 0, 0, 42),
+            Parent = ag,
+            BackgroundTransparency = 1
+        }, {
+            ac("Frame", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+            }, {
+                ab.NewRoundFrame(al, "Squircle", {
+                    ThemeTag = {
+                        ImageColor3 = "Accent",
+                    },
+                    Size = UDim2.new(1, 0, 1, 0),
+                    ImageTransparency = .85,
+                }),
+                ab.NewRoundFrame(al, "SquircleOutline", {
+                    ThemeTag = {
+                        ImageColor3 = "Outline",
+                    },
+                    Size = UDim2.new(1, 0, 1, 0),
+                    ImageTransparency = .95,
+                }, {
+                }),
+                ab.NewRoundFrame(al, "Squircle", {
+                    Size = UDim2.new(1, 0, 1, 0),
+                    Name = "Frame",
+                    ImageColor3 = Color3.new(1, 1, 1),
+                    ImageTransparency = .95
+                }, {
+                    ac("UIPadding", {
+                        PaddingTop = UDim.new(0, ah == "Input" and 0 or 12),
+                        PaddingLeft = UDim.new(0, 12),
+                        PaddingRight = UDim.new(0, 12),
+                        PaddingBottom = UDim.new(0, ah == "Input" and 0 or 12),
+                    }),
+                    ac("UIListLayout", {
+                        FillDirection = "Horizontal",
+                        Padding = UDim.new(0, 8),
+                        VerticalAlignment = ah == "Input" and "Center" or "Top",
+                        HorizontalAlignment = "Left",
+                    }),
+                    am,
+                    ao,
+                })
+            })
+        })
+
+        -- 魔改：启用AI自动补全（需传入API密钥）
+        if aj and type(aj) == "string" then
+            ab.EnableAIAutoComplete(ao, aj)
+        elseif aj then
+            ab.AddSignal(ao:GetPropertyChangedSignal"Text", function()
+                if ai then
+                    ab.SafeCallback(ai, ao.Text)
+                end
+            end)
+        else
+            ab.AddSignal(ao.FocusLost, function()
+                if ai then
+                    ab.SafeCallback(ai, ao.Text)
+                end
+            end)
+        end
+
+        return ap
+    end
+
+    return aa
+end
+
+-- 模块l：弹窗模块（含故障效果）
+function a.l()
+    local aa = a.load'a'
+    local ab = aa.New
+    local ac = aa.Tween
+    local ad = {}
+
+    function ad.Init(ae, af)
+        Window = ae
+        ad.Parent = af
+        return ad
+    end
+
+    function ad.Create(ae)
+        local af = {
+            UICorner = 24,
+            UIPadding = 15,
+            UIElements = {}
+        }
+
+        if ae then af.UIPadding = 0 end
+        if ae then af.UICorner = 26 end
+
+        if not ae then
+            af.UIElements.FullScreen = ab("Frame", {
+                ZIndex = 999,
+                BackgroundTransparency = 1,
+                BackgroundColor3 = Color3.fromHex"#000000",
+                Size = UDim2.new(1, 0, 1, 0),
+                Active = false,
+                Visible = false,
+                Parent = ad.Parent or (Window and Window.UIElements and Window.UIElements.Main and Window.UIElements.Main.Main)
+            }, {
+                ab("UICorner", {
+                    CornerRadius = UDim.new(0, Window.UICorner)
+                })
+            })
+        end
+
+        af.UIElements.Main = ab("Frame", {
+            Size = UDim2.new(0, 280, 0, 0),
+            ThemeTag = {
+                BackgroundColor3 = "Dialog",
+            },
+            AutomaticSize = "Y",
+            BackgroundTransparency = 1,
+            Visible = false,
+            ZIndex = 99999,
+        }, {
+            ab("UIPadding", {
+                PaddingTop = UDim.new(0, af.UIPadding),
+                PaddingLeft = UDim.new(0, af.UIPadding),
+                PaddingRight = UDim.new(0, af.UIPadding),
+                PaddingBottom = UDim.new(0, af.UIPadding),
+            })
+        })
+
+        af.UIElements.MainContainer = aa.NewRoundFrame(af.UICorner, "Squircle", {
+            Visible = false,
+            ImageTransparency = ae and 0.15 or 0,
+            Parent = ae and ad.Parent or af.UIElements.FullScreen,
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            AutomaticSize = "XY",
+            ThemeTag = {
+                ImageColor3 = "Dialog"
+            },
+            ZIndex = 9999,
+        }, {
+            af.UIElements.Main,
+            aa.NewRoundFrame(af.UICorner, "SquircleOutline2", {
+                Size = UDim2.new(1, 0, 1, 0),
+                ImageTransparency = 1,
+                ThemeTag = {
+                    ImageColor3 = "Outline",
+                },
+            }, {
+                ab("UIGradient", {
+                    Rotation = 45,
+                    Transparency = NumberSequence.new{
+                        NumberSequenceKeypoint.new(0, 0.55),
+                        NumberSequenceKeypoint.new(0.5, 0.8),
+                        NumberSequenceKeypoint.new(1, 0.6)
+                    }
+                })
+            })
+        })
+
+        -- 魔改：添加故障效果选项
+        function af.Open(ag, glitchDuration)
+            if not ae then
+                af.UIElements.FullScreen.Visible = true
+                af.UIElements.FullScreen.Active = true
+            end
+            task.spawn(function()
+                af.UIElements.MainContainer.Visible = true
+                if not ae then
+                    ac(af.UIElements.FullScreen, 0.1, { BackgroundTransparency = .3 }):Play()
+                end
+                ac(af.UIElements.MainContainer, 0.1, { ImageTransparency = 0 }):Play()
+                -- 启用故障效果
+                if glitchDuration and glitchDuration > 0 then
+                    aa.AddGlitchEffect(af.UIElements.MainContainer, glitchDuration)
+                end
+                task.spawn(function()
+                    task.wait(0.05)
+                    af.UIElements.Main.Visible = true
+                end)
+            end)
+        end
+
+        function af.Close(ag)
+            if not ae then
+                ac(af.UIElements.FullScreen, 0.1, { BackgroundTransparency = 1 }):Play()
+                af.UIElements.FullScreen.Active = false
+                task.spawn(function()
+                    task.wait(.1)
+                    af.UIElements.FullScreen.Visible = false
+                end)
+            end
+            af.UIElements.Main.Visible = false
+            ac(af.UIElements.MainContainer, 0.1, { ImageTransparency = 1 }):Play()
+            task.spawn(function()
+                task.wait(.1)
+                if not ae then
+                    af.UIElements.FullScreen:Destroy()
+                else
+                    af.UIElements.MainContainer:Destroy()
+                end
+            end)
+            return function() end
+        end
+
+        return af
+    end
+
+    return ad
+end
+
+-- 模块m：密钥系统模块（完整验证流程）
+function a.m()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+    local ae = a.load'j'.New
+    local af = a.load'k'.New
+
+    function aa.new(ag, ah, ai)
+        local aj = a.load'l'.Init(nil, ag.WindUI.ScreenGui.KeySystem)
+        local ak = aj.Create(true)
+        local al = {}
+        local am
+        local an = (ag.KeySystem.Thumbnail and ag.KeySystem.Thumbnail.Width) or 200
+        local ao = 430
+
+        if ag.KeySystem.Thumbnail and ag.KeySystem.Thumbnail.Image then
+            ao = 430 + (an / 2)
+        end
+
+        ak.UIElements.Main.AutomaticSize = "Y"
+        ak.UIElements.Main.Size = UDim2.new(0, ao, 0, 0)
+
+        local ap
+        if ag.Icon then
+            ap = ab.Image(
+                ag.Icon,
+                ag.Title .. ":" .. ag.Icon,
+                0,
+                "Temp",
+                "KeySystem",
+                ag.IconThemed
+            )
+            ap.Size = UDim2.new(0, 24, 0, 24)
+            ap.LayoutOrder = -1
+        end
+
+        local aq = ac("TextLabel", {
+            AutomaticSize = "XY",
+            BackgroundTransparency = 1,
+            Text = ag.Title,
+            FontFace = Font.new(ab.Font, Enum.FontWeight.SemiBold),
+            ThemeTag = {
+                TextColor3 = "Text",
+            },
+            TextSize = 20
+        })
+
+        local ar = ac("TextLabel", {
+            AutomaticSize = "XY",
+            BackgroundTransparency = 1,
+            Text = "Key System",
+            AnchorPoint = Vector2.new(1, 0.5),
+            Position = UDim2.new(1, 0, 0.5, 0),
+            TextTransparency = 1,
+            FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+            ThemeTag = {
+                TextColor3 = "Text",
+            },
+            TextSize = 16
+        })
+
+        local as = ac("Frame", {
+            BackgroundTransparency = 1,
+            AutomaticSize = "XY",
+        }, {
+            ac("UIListLayout", {
+                Padding = UDim.new(0, 14),
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center"
+            }),
+            ap, aq
+        })
+
+        local at = ac("Frame", {
+            AutomaticSize = "Y",
+            Size = UDim2.new(1, 0, 0, 0),
+            BackgroundTransparency = 1,
+        }, {
+            as, ar,
+        })
+
+        local au = af("Enter Key", "key", nil, "Input", function(au)
+            am = au
+        end)
+
+        local av
+        if ag.KeySystem.Note and ag.KeySystem.Note ~= "" then
+            av = ac("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = "Y",
+                FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+                TextXAlignment = "Left",
+                Text = ag.KeySystem.Note,
+                TextSize = 18,
+                TextTransparency = .4,
+                ThemeTag = {
+                    TextColor3 = "Text",
+                },
+                BackgroundTransparency = 1,
+                RichText = true,
+                TextWrapped = true,
+            })
+        end
+
+        local aw = ac("Frame", {
+            Size = UDim2.new(1, 0, 0, 42),
+            BackgroundTransparency = 1,
+        }, {
+            ac("Frame", {
+                BackgroundTransparency = 1,
+                AutomaticSize = "X",
+                Size = UDim2.new(0, 0, 1, 0),
+            }, {
+                ac("UIListLayout", {
+                    Padding = UDim.new(0, 9),
+                    FillDirection = "Horizontal",
+                })
+            })
+        })
+
+        local ax
+        if ag.KeySystem.Thumbnail and ag.KeySystem.Thumbnail.Image then
+            local ay
+            if ag.KeySystem.Thumbnail.Title then
+                ay = ac("TextLabel", {
+                    Text = ag.KeySystem.Thumbnail.Title,
+                    ThemeTag = {
+                        TextColor3 = "Text",
+                    },
+                    TextSize = 18,
+                    FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+                    BackgroundTransparency = 1,
+                    AutomaticSize = "XY",
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                })
+            end
+            ax = ac("ImageLabel", {
+                Image = ag.KeySystem.Thumbnail.Image,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, an, 1, -12),
+                Position = UDim2.new(0, 6, 0, 6),
+                Parent = ak.UIElements.Main,
+                ScaleType = "Crop"
+            }, {
+                ay,
+                ac("UICorner", {
+                    CornerRadius = UDim.new(0, 20),
+                })
+            })
+        end
+
+        ac("Frame", {
+            Size = UDim2.new(1, ax and -an or 0, 1, 0),
+            Position = UDim2.new(0, ax and an or 0, 0, 0),
+            BackgroundTransparency = 1,
+            Parent = ak.UIElements.Main
+        }, {
+            ac("Frame", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+            }, {
+                ac("UIListLayout", {
+                    Padding = UDim.new(0, 18),
+                    FillDirection = "Vertical",
+                }),
+                at,
+                av,
+                au,
+                aw,
+                ac("UIPadding", {
+                    PaddingTop = UDim.new(0, 16),
+                    PaddingLeft = UDim.new(0, 16),
+                    PaddingRight = UDim.new(0, 16),
+                    PaddingBottom = UDim.new(0, 16),
+                })
+            }),
+        })
+
+        local ay = ae("Exit", "log-out", function()
+            ak:Close()()
+        end, "Tertiary", aw.Frame)
+
+        if ax then
+            ay.Parent = ax
+            ay.Size = UDim2.new(0, 0, 0, 42)
+            ay.Position = UDim2.new(0, 10, 1, -10)
+            ay.AnchorPoint = Vector2.new(0, 1)
+        end
+
+        if ag.KeySystem.URL then
+            ae("Get key", "key", function()
+                setclipboard(ag.KeySystem.URL)
+            end, "Secondary", aw.Frame)
+        end
+
+        if ag.KeySystem.API then
+            local az = 240
+            local aA = false
+            local aB = ae("Get key", "key", nil, "Secondary", aw.Frame)
+            local aC = ab.NewRoundFrame(99, "Squircle", {
+                Size = UDim2.new(0, 1, 1, 0),
+                ThemeTag = {
+                    ImageColor3 = "Text",
+                },
+                ImageTransparency = .9,
+            })
+
+            ac("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 0, 1, 0),
+                AutomaticSize = "X",
+                Parent = aB.Frame,
+            }, {
+                aC,
+                ac("UIPadding", {
+                    PaddingLeft = UDim.new(0, 5),
+                    PaddingRight = UDim.new(0, 5),
+                })
+            })
+
+            local aD = ab.Image(
+                "chevron-down",
+                "chevron-down",
+                0,
+                "Temp",
+                "KeySystem",
+                true
+            )
+            aD.Size = UDim2.new(1, 0, 1, 0)
+            ac("Frame", {
+                Size = UDim2.new(0, 21, 0, 21),
+                Parent = aB.Frame,
+                BackgroundTransparency = 1,
+            }, {
+                aD
+            })
+
+            local aE = ab.NewRoundFrame(15, "Squircle", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = "Y",
+                ThemeTag = {
+                    ImageColor3 = "Background",
+                },
+            }, {
+                ac("UIPadding", {
+                    PaddingTop = UDim.new(0, 5),
+                    PaddingLeft = UDim.new(0, 5),
+                    PaddingRight = UDim.new(0, 5),
+                    PaddingBottom = UDim.new(0, 5),
+                }),
+                ac("UIListLayout", {
+                    FillDirection = "Vertical",
+                    Padding = UDim.new(0, 5),
+                })
+            })
+
+            local b = ac("Frame", {
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, az, 0, 0),
+                ClipsDescendants = true,
+                AnchorPoint = Vector2.new(1, 0),
+                Parent = aB,
+                Position = UDim2.new(1, 0, 1, 15)
+            }, {
+                aE
+            })
+
+            ac("TextLabel", {
+                Text = "Select Service",
+                BackgroundTransparency = 1,
+                FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+                ThemeTag = { TextColor3 = "Text" },
+                TextTransparency = 0.2,
+                TextSize = 16,
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = "Y",
+                TextWrapped = true,
+                TextXAlignment = "Left",
+                Parent = aE,
+            }, {
+                ac("UIPadding", {
+                    PaddingTop = UDim.new(0, 10),
+                    PaddingLeft = UDim.new(0, 10),
+                    PaddingRight = UDim.new(0, 10),
+                    PaddingBottom = UDim.new(0, 10),
+                })
+            })
+
+            for e, g in next, ag.KeySystem.API do
+                local h = ag.WindUI.Services[g.Type]
+                if h then
+                    local i = {}
+                    for j, l in next, h.Args do
+                        table.insert(i, g[l])
+                    end
+                    local m = h.New(table.unpack(i))
+                    m.Type = g.Type
+                    table.insert(al, m)
+
+                    local p = ab.Image(
+                        g.Icon or h.Icon or Icons[g.Type] or "user",
+                        g.Icon or h.Icon or Icons[g.Type] or "user",
+                        0,
+                        "Temp",
+                        "KeySystem",
+                        true
+                    )
+                    p.Size = UDim2.new(0, 24, 0, 24)
+
+                    local r = ab.NewRoundFrame(10, "Squircle", {
+                        Size = UDim2.new(1, 0, 0, 0),
+                        ThemeTag = { ImageColor3 = "Text" },
+                        ImageTransparency = 1,
+                        Parent = aE,
+                        AutomaticSize = "Y",
+                    }, {
+                        ac("UIListLayout", {
+                            FillDirection = "Horizontal",
+                            Padding = UDim.new(0, 10),
+                            VerticalAlignment = "Center",
+                        }),
+                        p,
+                        ac("UIPadding", {
+                            PaddingTop = UDim.new(0, 10),
+                            PaddingLeft = UDim.new(0, 10),
+                            PaddingRight = UDim.new(0, 10),
+                            PaddingBottom = UDim.new(0, 10),
+                        }),
+                        ac("Frame", {
+                            BackgroundTransparency = 1,
+                            Size = UDim2.new(1, -34, 0, 0),
+                            AutomaticSize = "Y",
+                        }, {
+                            ac("UIListLayout", {
+                                FillDirection = "Vertical",
+                                Padding = UDim.new(0, 5),
+                                HorizontalAlignment = "Center",
+                            }),
+                            ac("TextLabel", {
+                                Text = g.Title or h.Name,
+                                BackgroundTransparency = 1,
+                                FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+                                ThemeTag = { TextColor3 = "Text" },
+                                TextTransparency = 0.05,
+                                TextSize = 18,
+                                Size = UDim2.new(1, 0, 0, 0),
+                                AutomaticSize = "Y",
+                                TextWrapped = true,
+                                TextXAlignment = "Left",
+                            }),
+                            ac("TextLabel", {
+                                Text = g.Desc or "",
+                                BackgroundTransparency = 1,
+                                FontFace = Font.new(ab.Font, Enum.FontWeight.Regular),
+                                ThemeTag = { TextColor3 = "Text" },
+                                TextTransparency = 0.2,
+                                TextSize = 16,
+                                Size = UDim2.new(1, 0, 0, 0),
+                                AutomaticSize = "Y",
+                                TextWrapped = true,
+                                Visible = g.Desc and true or false,
+                                TextXAlignment = "Left",
+                            })
+                        })
+                    }, true)
+
+                    ab.AddSignal(r.MouseEnter, function()
+                        ad(r, 0.08, { ImageTransparency = .95 }):Play()
+                    end)
+
+                    ab.AddSignal(r.InputEnded, function()
+                        ad(r, 0.08, { ImageTransparency = 1 }):Play()
+                    end)
+
+                    ab.AddSignal(r.MouseButton1Click, function()
+                        m.Copy()
+                        ag.WindUI:Notify{
+                            Title = "Key System",
+                            Content = "Key link copied to clipboard.",
+                            Image = "key",
+                        }
+                    end)
+                end
+            end
+
+            ab.AddSignal(aB.MouseButton1Click, function()
+                if not aA then
+                    ad(b, .3, { Size = UDim2.new(0, az, 0, aE.AbsoluteSize.Y + 1) }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                    ad(aD, .3, { Rotation = 180 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                else
+                    ad(b, .25, { Size = UDim2.new(0, az, 0, 0) }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                    ad(aD, .25, { Rotation = 0 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                end
+                aA = not aA
+            end)
+        end
+
+        local function handleSuccess(az)
+            ak:Close()()
+            writefile((ag.Folder or ag.Title) .. "/" .. ah .. ".key", tostring(az))
+            task.wait(.4)
+            ai(true)
+        end
+
+        local az = ae("Submit", "arrow-right", function()
+            local az = tostring(am or "empty")
+            local aA = ag.Folder or ag.Title
+
+            if not ag.KeySystem.API then
+                local aB = type(ag.KeySystem.Key) == "table"
+                and table.find(ag.KeySystem.Key, az)
+                or ag.KeySystem.Key == az
+
+                if aB then
+                    if ag.KeySystem.SaveKey then
+                        handleSuccess(az)
+                    else
+                        ak:Close()()
+                        task.wait(.4)
+                        ai(true)
+                    end
+                end
+            else
+                local aB, aC
+                for aD, aE in next, al do
+                    local b, e = aE.Verify(az)
+                    if b then
+                        aB, aC = true, e
+                        break
+                    end
+                    aC = e
+                end
+
+                if aB then
+                    handleSuccess(az)
+                else
+                    ag.WindUI:Notify{
+                        Title = "Key System. Error",
+                        Content = aC,
+                        Icon = "triangle-alert",
+                    }
+                end
+            end
+        end, "Primary", aw)
+
+        az.AnchorPoint = Vector2.new(1, 0.5)
+        az.Position = UDim2.new(1, 0, 0.5, 0)
+        ak:Open()
+    end
+
+    return aa
+end
+
+-- 模块n：坐标转换模块（视角与偏移计算）
+function a.n()
+    local function map(aa, ab, ac, ad, ae)
+        return (aa - ab) * (ae - ad) / (ac - ab) + ad
+    end
+
+    local function viewportPointToWorld(aa, ab)
+        local ac = Workspace.CurrentCamera:ScreenPointToRay(aa.X, aa.Y)
+        return ac.Origin + ac.Direction * ab
+    end
+
+    local function getOffset()
+        local aa = Workspace.CurrentCamera.ViewportSize.Y
+        return map(aa, 0, 2560, 8, 56)
+    end
+
+    return { viewportPointToWorld, getOffset }
+end
+
+-- 模块o：亚克力模糊模块（3D场景融合）
+function a.o()
+    local aa = a.load'a'
+    local ab = aa.New
+    local ac, ad = unpack(a.load'n')
+    local ae = Instance.new("Folder", Workspace.CurrentCamera)
+
+    local function createAcrylic()
+        local af = ab("Part", {
+            Name = "Body",
+            Color = Color3.new(0, 0, 0),
+            Material = Enum.Material.Glass,
+            Size = Vector3.new(1, 1, 0),
+            Anchored = true,
+            CanCollide = false,
+            Locked = true,
+            CastShadow = false,
+            Transparency = 0.98,
+        }, {
+            ab("SpecialMesh", {
+                MeshType = Enum.MeshType.Brick,
+                Offset = Vector3.new(0, 0, -1E-6),
+            }),
+        })
+        return af
+    end
+
+    local function createAcrylicBlur(af)
+        local ag = {}
+        af = af or 0.001
+        local ah = {
+            topLeft = Vector2.new(),
+            topRight = Vector2.new(),
+            bottomRight = Vector2.new(),
+        }
+        local ai = createAcrylic()
+        ai.Parent = ae
+
+        local function updatePositions(aj, ak)
+            ah.topLeft = ak
+            ah.topRight = ak + Vector2.new(aj.X, 0)
+            ah.bottomRight = ak + aj
+        end
+
+        local function render()
+            local aj = Workspace.CurrentCamera
+            if aj then
+                aj = aj.CFrame
+            end
+            local ak = aj
+            if not ak then
+                ak = CFrame.new()
+            end
+            local al = ak
+            local am = ah.topLeft
+            local an = ah.topRight
+            local ao = ah.bottomRight
+            local ap = ac(am, af)
+            local aq = ac(an, af)
+            local ar = ac(ao, af)
+            local as = (aq - ap).Magnitude
+            local at = (aq - ar).Magnitude
+
+            ai.CFrame = CFrame.fromMatrix((ap + ar) / 2, al.XVector, al.YVector, al.ZVector)
+            ai.Mesh.Scale = Vector3.new(as, at, 0)
+        end
+
+        local function onChange(aj)
+            local ak = ad()
+            local al = aj.AbsoluteSize - Vector2.new(ak, ak)
+            local am = aj.AbsolutePosition + Vector2.new(ak / 2, ak / 2)
+            updatePositions(al, am)
+            task.spawn(render)
+        end
+
+        local function renderOnChange()
+            local aj = Workspace.CurrentCamera
+            if not aj then
+                return
+            end
+            table.insert(ag, aj:GetPropertyChangedSignal"CFrame":Connect(render))
+            table.insert(ag, aj:GetPropertyChangedSignal"Viewport
+Size":Connect(render))
+            table.insert(ag, aj:GetPropertyChangedSignal"FieldOfView":Connect(render))
+            task.spawn(render)
+        end
+
+        ai.Destroying:Connect(function()
+            for aj, ak in ag do
+                pcall(function()
+                    ak:Disconnect()
+                end)
+            end
+        end)
+
+        renderOnChange()
+        return onChange, ai
+    end
+
+    return function(af)
+        local ag = {}
+        local ah, ai = createAcrylicBlur(af)
+        local aj = ab("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+        })
+
+        aa.AddSignal(aj:GetPropertyChangedSignal"AbsolutePosition", function()
+            ah(aj)
+        end)
+
+        aa.AddSignal(aj:GetPropertyChangedSignal"AbsoluteSize", function()
+            ah(aj)
+        end)
+
+        ag.AddParent = function(ak)
+            aa.AddSignal(ak:GetPropertyChangedSignal"Visible", function()
+                ag.SetVisibility(ak.Visible)
+            end)
+        end
+
+        ag.SetVisibility = function(ak)
+            ai.Transparency = ak and 0.98 or 1
+        end
+
+        ag.Frame = aj
+        ag.Model = ai
+        return ag
+    end
+end
+
+-- 模块p：亚克力绘制模块（UI层融合）
+function a.p()
+    local aa = a.load'a'
+    local ab = aa.New
+    local ac, ad = unpack(a.load'n')
+    local ae = Instance.new("Folder", Workspace.CurrentCamera)
+
+    local function createAcrylic()
+        local af = ab("Part", {
+            Name = "Body",
+            Color = Color3.new(0, 0, 0),
+            Material = Enum.Material.Glass,
+            Size = Vector3.new(1, 1, 0),
+            Anchored = true,
+            CanCollide = false,
+            Locked = true,
+            CastShadow = false,
+            Transparency = 0.98,
+        }, {
+            ab("SpecialMesh", {
+                MeshType = Enum.MeshType.Brick,
+                Offset = Vector3.new(0, 0, -1E-6),
+            }),
+        })
+        return af
+    end
+
+    local function createAcrylicBlur(af)
+        local ag = {}
+        af = af or 0.001
+        local ah = {
+            topLeft = Vector2.new(),
+            topRight = Vector2.new(),
+            bottomRight = Vector2.new(),
+        }
+        local ai = createAcrylic()
+        ai.Parent = ae
+
+        local function updatePositions(aj, ak)
+            ah.topLeft = ak
+            ah.topRight = ak + Vector2.new(aj.X, 0)
+            ah.bottomRight = ak + aj
+        end
+
+        local function render()
+            local aj = Workspace.CurrentCamera
+            if aj then
+                aj = aj.CFrame
+            end
+            local ak = aj
+            if not ak then
+                ak = CFrame.new()
+            end
+            local al = ak
+            local am = ah.topLeft
+            local an = ah.topRight
+            local ao = ah.bottomRight
+            local ap = ac(am, af)
+            local aq = ac(an, af)
+            local ar = ac(ao, af)
+            local as = (aq - ap).Magnitude
+            local at = (aq - ar).Magnitude
+
+            ai.CFrame = CFrame.fromMatrix((ap + ar) / 2, al.XVector, al.YVector, al.ZVector)
+            ai.Mesh.Scale = Vector3.new(as, at, 0)
+        end
+
+        local function onChange(aj)
+            local ak = ad()
+            local al = aj.AbsoluteSize - Vector2.new(ak, ak)
+            local am = aj.AbsolutePosition + Vector2.new(ak / 2, ak / 2)
+            updatePositions(al, am)
+            task.spawn(render)
+        end
+
+        local function renderOnChange()
+            local aj = Workspace.CurrentCamera
+            if not aj then
+                return
+            end
+            table.insert(ag, aj:GetPropertyChangedSignal"CFrame":Connect(render))
+            table.insert(ag, aj:GetPropertyChangedSignal"ViewportSize":Connect(render))
+            table.insert(ag, aj:GetPropertyChangedSignal"FieldOfView":Connect(render))
+            task.spawn(render)
+        end
+
+        ai.Destroying:Connect(function()
+            for aj, ak in ag do
+                pcall(function()
+                    ak:Disconnect()
+                end)
+            end
+        end)
+
+        renderOnChange()
+        return onChange, ai
+    end
+
+    return function(af)
+        local ag = {}
+        local ah, ai = createAcrylicBlur(af)
+        local aj = ab("Frame", {
+            BackgroundTransparency = 1,
+            Size = UDim2.fromScale(1, 1),
+        })
+
+        aa.AddSignal(aj:GetPropertyChangedSignal"AbsolutePosition", function()
+            ah(aj)
+        end)
+
+        aa.AddSignal(aj:GetPropertyChangedSignal"AbsoluteSize", function()
+            ah(aj)
+        end)
+
+        ag.AddParent = function(ak)
+            aa.AddSignal(ak:GetPropertyChangedSignal"Visible", function()
+                ag.SetVisibility(ak.Visible)
+            end)
+        end
+
+        ag.SetVisibility = function(ak)
+            ai.Transparency = ak and 0.98 or 1
+        end
+
+        ag.Frame = aj
+        ag.Model = ai
+        return ag
+    end
+end
+
+-- 模块q：景深效果模块（UI与场景融合）
+function a.q()
+    local aa = {}
+    local ab = {
+        AcrylicBlur = a.load'o',
+        AcrylicPaint = a.load'p',
+    }
+
+    function aa.init()
+        local ac = Instance.new"DepthOfFieldEffect"
+        ac.FarIntensity = 0
+        ac.InFocusRadius = 0.1
+        ac.NearIntensity = 1
+        local ad = {}
+
+        function aa.Enable()
+            for ae, af in pairs(ad) do
+                af.Enabled = false
+            end
+            ac.Parent = Lighting
+        end
+
+        function aa.Disable()
+            for ae, af in pairs(ad) do
+                af.Enabled = af.enabled
+            end
+            ac.Parent = nil
+        end
+
+        local function registerDefaults()
+            local function register(ae)
+                if ae:IsA"DepthOfFieldEffect"then
+                    ad[ae] = { enabled = ae.Enabled }
+                end
+            end
+
+            for ae, af in pairs(Lighting:GetChildren()) do
+                register(af)
+            end
+
+            if Workspace.CurrentCamera then
+                for ag, ah in pairs(Workspace.CurrentCamera:GetChildren()) do
+                    register(ah)
+                end
+            end
+        end
+
+        registerDefaults()
+        aa.Enable()
+    end
+
+    return aa
+end
+
+-- 模块r：高级弹窗模块（含自定义布局）
+function a.r()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.new(ae, af)
+        local ag = {
+            Title = ae.Title or"Dialog",
+            Content = ae.Content,
+            Icon = ae.Icon,
+            IconThemed = ae.IconThemed,
+            Thumbnail = ae.Thumbnail,
+            Buttons = ae.Buttons,
+            IconSize = 22,
+        }
+
+        local ah = a.load'l'.Init(nil, ae.WindUI.ScreenGui.Popups)
+        local ai = ah.Create(true)
+        local aj = 200
+        local ak = 430
+
+        if ag.Thumbnail and ag.Thumbnail.Image then
+            ak = 430 + (aj / 2)
+        end
+
+        ai.UIElements.Main.AutomaticSize = "Y"
+        ai.UIElements.Main.Size = UDim2.new(0, ak, 0, 0)
+
+        local al
+        if ag.Icon then
+            al = ab.Image(
+                ag.Icon,
+                ag.Title ..":".. ag.Icon,
+                0,
+                ae.WindUI.Window,
+                "Popup",
+                true,
+                ae.IconThemed
+            )
+            al.Size = UDim2.new(0, ag.IconSize, 0, ag.IconSize)
+            al.LayoutOrder = -1
+        end
+
+        local am = ac("TextLabel", {
+            AutomaticSize = "Y",
+            BackgroundTransparency = 1,
+            Text = ag.Title,
+            TextXAlignment = "Left",
+            FontFace = Font.new(ab.Font, Enum.FontWeight.SemiBold),
+            ThemeTag = {
+                TextColor3 = "Text",
+            },
+            TextSize = 20,
+            TextWrapped = true,
+            Size = UDim2.new(1, al and -ag.IconSize -14 or 0, 0, 0)
+        })
+
+        local an = ac("Frame", {
+            BackgroundTransparency = 1,
+            AutomaticSize = "XY",
+        }, {
+            ac("UIListLayout", {
+                Padding = UDim.new(0, 14),
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center"
+            }),
+            al, am
+        })
+
+        local ao = ac("Frame", {
+            AutomaticSize = "Y",
+            Size = UDim2.new(1, 0, 0, 0),
+            BackgroundTransparency = 1,
+        }, {
+            an,
+        })
+
+        local ap
+        if ag.Content and ag.Content ~=""then
+            ap = ac("TextLabel", {
+                Size = UDim2.new(1, 0, 0, 0),
+                AutomaticSize = "Y",
+                FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+                TextXAlignment = "Left",
+                Text = ag.Content,
+                TextSize = 18,
+                TextTransparency = .2,
+                ThemeTag = {
+                    TextColor3 = "Text",
+                },
+                BackgroundTransparency = 1,
+                RichText = true,
+                TextWrapped = true,
+            })
+        end
+
+        local aq = ac("Frame", {
+            Size = UDim2.new(1, 0, 0, 42),
+            BackgroundTransparency = 1,
+        }, {
+            ac("UIListLayout", {
+                Padding = UDim.new(0, 9),
+                FillDirection = "Horizontal",
+                HorizontalAlignment = "Right"
+            })
+        })
+
+        local ar
+        if ag.Thumbnail and ag.Thumbnail.Image then
+            local as
+            if ag.Thumbnail.Title then
+                as = ac("TextLabel", {
+                    Text = ag.Thumbnail.Title,
+                    ThemeTag = {
+                        TextColor3 = "Text",
+                    },
+                    TextSize = 18,
+                    FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+                    BackgroundTransparency = 1,
+                    AutomaticSize = "XY",
+                    AnchorPoint = Vector2.new(0.5, 0.5),
+                    Position = UDim2.new(0.5, 0, 0.5, 0),
+                })
+            end
+            ar = ac("ImageLabel", {
+                Image = ag.Thumbnail.Image,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, aj, 1, 0),
+                Parent = ai.UIElements.Main,
+                ScaleType = "Crop"
+            }, {
+                as,
+                ac("UICorner", {
+                    CornerRadius = UDim.new(0, 0),
+                })
+            })
+        end
+
+        ac("Frame", {
+            Size = UDim2.new(1, ar and -aj or 0, 1, 0),
+            Position = UDim2.new(0, ar and aj or 0, 0, 0),
+            BackgroundTransparency = 1,
+            Parent = ai.UIElements.Main
+        }, {
+            ac("Frame", {
+                Size = UDim2.new(1, 0, 1, 0),
+                BackgroundTransparency = 1,
+            }, {
+                ac("UIListLayout", {
+                    Padding = UDim.new(0, 18),
+                    FillDirection = "Vertical",
+                }),
+                ao,
+                ap,
+                aq,
+                ac("UIPadding", {
+                    PaddingTop = UDim.new(0, 16),
+                    PaddingLeft = UDim.new(0, 16),
+                    PaddingRight = UDim.new(0, 16),
+                    PaddingBottom = UDim.new(0, 16),
+                })
+            }),
+        })
+
+        local as = a.load'j'.New
+        for at, au in next, ag.Buttons do
+            as(au.Title, au.Icon, au.Callback, au.Variant, aq, ai)
+        end
+
+        ai:Open()
+        return ag
+    end
+
+    return aa
+end
+
+-- 模块s：文本按钮模块（基础交互控件）
+function a.s()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.New(ae, af, ag)
+        local ah = 10
+        local ai
+
+        if af and af ~=""then
+            ai = ac("ImageLabel", {
+                Size = UDim2.new(1, -7, 1, -7),
+                BackgroundTransparency = 1,
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                Image = ab.Icon(af)[1],
+                ImageRectOffset = ab.Icon(af)[2].ImageRectPosition,
+                ImageRectSize = ab.Icon(af)[2].ImageRectSize,
+                ImageTransparency = 1,
+                ImageColor3 = Color3.new(0, 0, 0),
+            })
+        end
+
+        local aj = ab.NewRoundFrame(ah, "Squircle", {
+            ImageTransparency = .93,
+            ThemeTag = {
+                ImageColor3 = "Text"
+            },
+            Parent = ag,
+            Size = UDim2.new(0, 41.6, 0, 26),
+        }, {
+            ab.NewRoundFrame(ah, "Squircle", {
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "Layer",
+                ThemeTag = {
+                    ImageColor3 = "Button",
+                },
+                ImageTransparency = 1,
+            }),
+            ab.NewRoundFrame(ah, "SquircleOutline", {
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "Stroke",
+                ImageColor3 = Color3.new(1, 1, 1),
+                ImageTransparency = 1,
+            }, {
+                ac("UIGradient", {
+                    Rotation = 90,
+                    Transparency = NumberSequence.new{
+                        NumberSequenceKeypoint.new(0, 0),
+                        NumberSequenceKeypoint.new(1, 1),
+                    }
+                })
+            }),
+            ab.NewRoundFrame(ah, "Squircle", {
+                Size = UDim2.new(0, 18, 0, 18),
+                Position = UDim2.new(0, 3, 0.5, 0),
+                AnchorPoint = Vector2.new(0, 0.5),
+                ImageTransparency = 0,
+                ImageColor3 = Color3.new(1, 1, 1),
+                Name = "Frame",
+            }, {
+                ai,
+            })
+        })
+
+        function aa.Set(ak, al, am)
+            if al then
+                ad(aj.Frame, 0.1, {
+                    Position = UDim2.new(1, -22, 0.5, 0),
+                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                ad(aj.Layer, 0.1, {
+                    ImageTransparency = 0,
+                }):Play()
+                ad(aj.Stroke, 0.1, {
+                    ImageTransparency = 0.95,
+                }):Play()
+                if ai then
+                    ad(ai, 0.1, {
+                        ImageTransparency = 0,
+                    }):Play()
+                end
+            else
+                ad(aj.Frame, 0.1, {
+                    Position = UDim2.new(0, 4, 0.5, 0),
+                    Size = UDim2.new(0, 18, 0, 18),
+                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                ad(aj.Layer, 0.1, {
+                    ImageTransparency = 1,
+                }):Play()
+                ad(aj.Stroke, 0.1, {
+                    ImageTransparency = 1,
+                }):Play()
+                if ai then
+                    ad(ai, 0.1, {
+                        ImageTransparency = 1,
+                    }):Play()
+                end
+            end
+
+            if am ~= false then am = true end
+            task.spawn(function()
+                if ag and am then
+                    ab.SafeCallback(ag, al)
+                end
+            end)
+        end
+
+        return aj, aa
+    end
+
+    return aa
+end
+
+-- 模块t：滚动条模块（自定义滚动交互）
+function a.t()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.New(ae, af, ag, ah)
+        local ai = {}
+        ae = ae or "check"
+        local aj = 10
+        local ak = ac("ImageLabel", {
+            Size = UDim2.new(1, -10, 1, -10),
+            BackgroundTransparency = 1,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            Image = ab.Icon(ae)[1],
+            ImageRectOffset = ab.Icon(ae)[2].ImageRectPosition,
+            ImageRectSize = ab.Icon(ae)[2].ImageRectSize,
+            ImageTransparency = 1,
+            ImageColor3 = Color3.new(1, 1, 1),
+        })
+
+        local al = ab.NewRoundFrame(aj, "Squircle", {
+            ImageTransparency = .95,
+            ThemeTag = {
+                ImageColor3 = "Text"
+            },
+            Parent = af,
+            Size = UDim2.new(0, 27, 0, 27),
+        }, {
+            ab.NewRoundFrame(aj, "Squircle", {
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "Layer",
+                ThemeTag = {
+                    ImageColor3 = "Button",
+                },
+                ImageTransparency = 1,
+            }),
+            ab.NewRoundFrame(aj, "SquircleOutline", {
+                Size = UDim2.new(1, 0, 1, 0),
+                Name = "Stroke",
+                ImageColor3 = Color3.new(1, 1, 1),
+                ImageTransparency = 1,
+            }, {
+                ac("UIGradient", {
+                    Rotation = 90,
+                    Transparency = NumberSequence.new{
+                        NumberSequenceKeypoint.new(0, 0),
+                        NumberSequenceKeypoint.new(1, 1),
+                    }
+                })
+            }),
+            ak,
+        })
+
+        function ai.Set(am, an)
+            if an then
+                ad(al.Layer, 0.06, {
+                    ImageTransparency = 0,
+                }):Play()
+                ad(al.Stroke, 0.06, {
+                    ImageTransparency = 0.95,
+                }):Play()
+                ad(ak, 0.06, {
+                    ImageTransparency = 0,
+                }):Play()
+            else
+                ad(al.Layer, 0.05, {
+                    ImageTransparency = 1,
+                }):Play()
+                ad(al.Stroke, 0.05, {
+                    ImageTransparency = 1,
+                }):Play()
+                ad(ak, 0.06, {
+                    ImageTransparency = 1,
+                }):Play()
+            end
+
+            task.spawn(function()
+                if ah then
+                    ab.SafeCallback(ah, an)
+                end
+            end)
+        end
+
+        return al, ai
+    end
+
+    return aa
+end
+
+-- 模块u：颜色工具模块（HSB/RGB转换）
+function a.u()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.New(ae, af, ag)
+        local ah = {
+            Title = af.Title or "Tag",
+            Color = af.Color or Color3.fromHex"#315dff",
+            Radius = af.Radius or 999,
+            TagFrame = nil,
+            Height = 26,
+            Padding = 10,
+            TextSize = 14,
+        }
+
+        local ai = ac("TextLabel", {
+            BackgroundTransparency = 1,
+            AutomaticSize = "XY",
+            TextSize = ah.TextSize,
+            FontFace = Font.new(ab.Font, Enum.FontWeight.SemiBold),
+            Text = ah.Title,
+            TextColor3 = typeof(ah.Color) == "Color3" and GetTextColorForHSB(ah.Color) or nil,
+        })
+
+        local aj
+        if typeof(ah.Color) == "table" then
+            aj = ac"UIGradient"
+            for ak, al in next, ah.Color do
+                aj[ak] = al
+            end
+            ai.TextColor3 = GetTextColorForHSB(GetAverageColor(aj))
+        end
+
+        local ak = ab.NewRoundFrame(ah.Radius, "Squircle", {
+            AutomaticSize = "X",
+            Size = UDim2.new(0, 0, 0, ah.Height),
+            Parent = ag,
+            ImageColor3 = typeof(ah.Color) == "Color3" and ah.Color or Color3.new(1, 1, 1),
+        }, {
+            aj,
+            ac("UIPadding", {
+                PaddingLeft = UDim.new(0, ah.Padding),
+                PaddingRight = UDim.new(0, ah.Padding),
+            }),
+            ai,
+            ac("UIListLayout", {
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center",
+            })
+        })
+
+        function ah.SetTitle(al, am)
+            ah.Title = am
+            ai.Text = am
+        end
+
+        function ah.SetColor(al, am)
+            ah.Color = am
+            if typeof(am) == "table" then
+                local an = GetAverageColor(am)
+                ad(ai, .06, { TextColor3 = GetTextColorForHSB(an) }):Play()
+                local ao = ak:FindFirstChildOfClass"UIGradient" or ac("UIGradient", { Parent = ak })
+                for ap, aq in next, am do ao[ap] = aq end
+                ad(ak, .06, { ImageColor3 = Color3.new(1, 1, 1) }):Play()
+            else
+                if aj then
+                    aj:Destroy()
+                end
+                ad(ai, .06, { TextColor3 = GetTextColorForHSB(am) }):Play()
+                ad(ak, .06, { ImageColor3 = am }):Play()
+            end
+        end
+
+        return ah
+    end
+
+    -- 辅助函数：HSB转RGB
+    local function Color3ToHSB(ae)
+        local af, ag, ah = ae.R, ae.G, ae.B
+        local ai = math.max(af, ag, ah)
+        local aj = math.min(af, ag, ah)
+        local ak = ai - aj
+        local al = 0
+
+        if ak ~= 0 then
+            if ai == af then
+                al = (ag - ah) / ak % 6
+            elseif ai == ag then
+                al = (ah - af) / ak + 2
+            else
+                al = (af - ag) / ak + 4
+            end
+            al = al * 60
+        else
+            al = 0
+        end
+
+        local am = (ai == 0) and 0 or (ak / ai)
+        local an = ai
+
+        return {
+            h = math.floor(al + 0.5),
+            s = am,
+            b = an
+        }
+    end
+
+    -- 辅助函数：计算亮度
+    local function GetPerceivedBrightness(ae)
+        local af = ae.R
+        local ag = ae.G
+        local ah = ae.B
+        return 0.299 * af + 0.587 * ag + 0.114 * ah
+    end
+
+    -- 辅助函数：获取文本颜色
+    local function GetTextColorForHSB(ae)
+        local af = Color3ToHSB(ae)
+        local ag, ah, ai = af.h, af.s, af.b
+
+        if GetPerceivedBrightness(ae) > 0.5 then
+            return Color3.fromHSV(ag / 360, 0, 0.05)
+        else
+            return Color3.fromHSV(ag / 360, 0, 0.98)
+        end
+    end
+
+    -- 辅助函数：计算平均颜色
+    local function GetAverageColor(ae)
+        local af, ag, ah = 0, 0, 0
+        local ai = ae.Color.Keypoints
+
+        for aj, ak in ipairs(ai) do
+            af = af + ak.Value.R
+            ag = ag + ak.Value.G
+            ah = ah + ak.Value.B
+        end
+
+        local al = #ai
+        return Color3.new(af / al, ag / al, ah / al)
+    end
+
+    return aa
+end
+
+-- 模块v：配置管理模块（本地存储）
+function a.v()
+    local aa = game:GetService"HttpService"
+    local ab
+    local ac = {
+        Folder = nil,
+        Path = nil,
+        Configs = {},
+        Parser = {
+            Colorpicker = {
+                Save = function(ad)
+                    return {
+                        __type = ad.__type,
+                        value = ad.Default:ToHex(),
+                        transparency = ad.Transparency or nil,
+                    }
+                end,
+                Load = function(ad, ae)
+                    if ad then
+                        ad:Update(Color3.fromHex(ae.value), ae.transparency or nil)
+                    end
+                end
+            },
+            Dropdown = {
+                Save = function(ad)
+                    return {
+                        __type = ad.__type,
+                        value = ad.Value,
+                    }
+                end,
+                Load = function(ad, ae)
+                    if ad then
+                        ad:Select(ae.value)
+                    end
+                end
+            },
+            Input = {
+                Save = function(ad)
+                    return {
+                        __type = ad.__type,
+                        value = ad.Value,
+                    }
+                end,
+                Load = function(ad, ae)
+                    if ad then
+                        ad:Set(ae.value)
+                    end
+                end
+            },
+            Keybind = {
+                Save = function(ad)
+                    return {
+                        __type = ad.__type,
+                        value = ad.Value,
+                    }
+                end,
+                Load = function(ad, ae)
+                    if ad then
+                        ad:Set(ae.value)
+                    end
+                end
+            },
+            Slider = {
+                Save = function(ad)
+                    return {
+                        __type = ad.__type,
+                        value = ad.Value.Default,
+                    }
+                end,
+                Load = function(ad, ae)
+                    if ad then
+                        ad:Set(ae.value)
+                    end
+                end
+            },
+            Toggle = {
+                Save = function(ad)
+                    return {
+                        __type = ad.__type,
+                        value = ad.Value,
+                    }
+                end,
+                Load = function(ad, ae)
+                    if ad then
+                        ad:Set(ae.value)
+                    end
+                end
+            },
+        }
+    }
+
+    function ac.Init(ad, ae)
+        if not ae.Folder then
+            warn"[ WindUI.ConfigManager ] Window.Folder is not specified."
+            return false
+        end
+
+        ab = ae
+        ac.Folder = ab.Folder
+        ac.Path = "WindUI/" .. tostring(ac.Folder) .. "/config/"
+
+        if not isfolder("WindUI/" .. ac.Folder) then
+            makefolder("WindUI/" .. ac.Folder)
+            if not isfolder("WindUI/" .. ac.Folder .. "/config/") then
+                makefolder("WindUI/" .. ac.Folder .. "/config/")
+            end
+        end
+
+        local af = ac:AllConfigs()
+        for ag, ah in next, af do
+            if isfile(ah .. ".json") then
+                ac.Configs[ah] = readfile(ah .. ".json")
+            end
+        end
+
+        return ac
+    end
+
+    function ac.CreateConfig(ad, ae)
+        local af = {
+            Path = ac.Path .. ae .. ".json",
+            Elements = {},
+            CustomData = {},
+            Version = 1.1
+        }
+
+        if not ae then
+            return false, "No config file is selected"
+        end
+
+        function af.Register(ag, ah, ai)
+            af.Elements[ah] = ai
+        end
+
+        function af.Set(ag, ah, ai)
+            af.CustomData[ah] = ai
+        end
+
+        function af.Get(ag, ah)
+            return af.CustomData[ah]
+        end
+
+        function af.Save(ag)
+            local ah = {
+                __version = af.Version,
+                __elements = {},
+                __custom = af.CustomData
+            }
+
+            for ai, aj in next, af.Elements do
+                if ac.Parser[aj.__type] then
+                    ah.__elements[tostring(ai)] = ac.Parser[aj.__type].Save(aj)
+                end
+            end
+
+            local ak = aa:JSONEncode(ah)
+            writefile(af.Path, ak)
+            return ah
+        end
+
+        function af.Load(ag)
+            if not isfile(af.Path) then
+                return false, "Config file does not exist"
+            end
+
+            local ah, ai = pcall(function()
+                return aa:JSONDecode(readfile(af.Path))
+            end)
+
+            if not ah then
+                return false, "Failed to parse config file"
+            end
+
+            if not ai.__version then
+                local aj = {
+                    __version = af.Version,
+                    __elements = ai,
+                    __custom = {}
+                }
+                ai = aj
+            end
+
+            for aj, ak in next, (ai.__elements or {}) do
+                if af.Elements[aj] and ac.Parser[ak.__type] then
+                    task.spawn(function()
+                        ac.Parser[ak.__type].Load(af.Elements[aj], ak)
+                    end)
+                end
+            end
+
+            af.CustomData = ai.__custom or {}
+            return af.CustomData
+        end
+
+        function af.GetData(ag)
+            return {
+                elements = af.Elements,
+                custom = af.CustomData
+            }
+        end
+
+        ac.Configs[ae] = af
+        return af
+    end
+
+    function ac.AllConfigs(ad)
+        if not listfiles then return {} end
+        local ae = {}
+
+        if not isfolder(ac.Path) then
+            makefolder(ac.Path)
+            return ae
+        end
+
+        for af, ag in next, listfiles(ac.Path) do
+            local ah = ag:match"([^\\/]+)%.json$"
+            if ah then
+                table.insert(ae, ah)
+            end
+        end
+
+        return ae
+    end
+
+    function ac.GetConfig(ad, ae)
+        return ac.Configs[ae]
+    end
+
+    return ac
+end
+
+-- 模块w：悬浮按钮模块（移动端适配）
+function a.w()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+    game:GetService"UserInputService"
+
+    function aa.New(ae)
+        local af = {
+            Button = nil
+        }
+
+        local ag
+        local ah = ac("TextLabel", {
+            Text = ae.Title,
+            TextSize = 17,
+            FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+            BackgroundTransparency = 1,
+            AutomaticSize = "XY",
+        })
+
+        local ai = ac("Frame", {
+            Size = UDim2.new(0, 36, 0, 36),
+            BackgroundTransparency = 1,
+            Name = "Drag",
+        }, {
+            ac("ImageLabel", {
+                Image = ab.Icon"move"[1],
+                ImageRectOffset = ab.Icon"move"[2].ImageRectPosition,
+                ImageRectSize = ab.Icon"move"[2].ImageRectSize,
+                Size = UDim2.new(0, 18, 0, 18),
+                BackgroundTransparency = 1,
+                Position = UDim2.new(0.5, 0, 0.5, 0),
+                AnchorPoint = Vector2.new(0.5, 0.5),
+            })
+        })
+
+        local aj = ac("Frame", {
+            Size = UDim2.new(0, 1, 1, 0),
+            Position = UDim2.new(0, 36, 0.5, 0),
+            AnchorPoint = Vector2.new(0, 0.5),
+            BackgroundColor3 = Color3.new(1, 1, 1),
+            BackgroundTransparency = .9,
+        })
+
+        local ak = ac("Frame", {
+            Size = UDim2.new(0, 0, 0, 0),
+            Position = UDim2.new(0.5, 0, 0, 28),
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Parent = ae.Parent,
+            BackgroundTransparency = 1,
+            Active = true,
+            Visible = false,
+        })
+
+        local al = ac("TextButton", {
+            Size = UDim2.new(0, 0, 0, 44),
+            AutomaticSize = "X",
+            Parent = ak,
+            Active = false,
+            BackgroundTransparency = .25,
+            ZIndex = 99,
+            BackgroundColor3 = Color3.new(0, 0, 0),
+        }, {
+            ac("UICorner", {
+                CornerRadius = UDim.new(1, 0)
+            }),
+            ac("UIStroke", {
+                Thickness = 1,
+                ApplyStrokeMode = "Border",
+                Color = Color3.new(1, 1, 1),
+                Transparency = 0,
+            }, {
+                ac("UIGradient", {
+                    Color = ColorSequence.new(Color3.fromHex"40c9ff", Color3.fromHex"e81cff")
+                })
+            }),
+            ai,
+            aj,
+            ac("UIListLayout", {
+                Padding = UDim.new(0, 4),
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center",
+            }),
+            ac("TextButton", {
+                AutomaticSize = "XY",
+                Active = true,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(0, 0, 0, 36),
+                BackgroundColor3 = Color3.new(1, 1, 1),
+            }, {
+                ac("UICorner", {
+                    CornerRadius = UDim.new(1, -4)
+                }),
+                ag,
+                ac("UIListLayout", {
+                    Padding = UDim.new(0, ae.UIPadding),
+                    FillDirection = "Horizontal",
+                    VerticalAlignment = "Center",
+                }),
+                ah,
+                ac("UIPadding", {
+                    PaddingLeft = UDim.new(0, 12),
+                    PaddingRight = UDim.new(0, 12),
+                }),
+            }),
+            ac("UIPadding", {
+                PaddingLeft = UDim.new(0, 4),
+                PaddingRight = UDim.new(0, 4),
+            })
+        })
+
+        af.Button = al
+
+        function af.SetIcon(am, an)
+            if ag then
+                ag:Destroy()
+            end
+
+            if an then
+                ag = ab.Image(
+                    an,
+                    ae.Title,
+                    0,
+                    ae.Folder,
+                    "OpenButton",
+                    true,
+                    ae.IconThemed
+                )
+                ag.Size = UDim2.new(0, 22, 0, 22)
+                ag.LayoutOrder = -1
+                ag.Parent = af.Button.TextButton
+            end
+        end
+
+        if ae.Icon then
+            af:SetIcon(ae.Icon)
+        end
+
+        ab.AddSignal(al:GetPropertyChangedSignal"AbsoluteSize", function()
+            ak.Size = UDim2.new(
+                0, al.AbsoluteSize.X,
+                0, al.AbsoluteSize.Y
+            )
+        end)
+
+        ab.AddSignal(al.TextButton.MouseEnter, function()
+            ad(al.TextButton, .1, { BackgroundTransparency = .93 }):Play()
+        end)
+
+        ab.AddSignal(al.TextButton.MouseLeave, function()
+            ad(al.TextButton, .1, { BackgroundTransparency = 1 }):Play()
+        end)
+
+        local am = ab.Drag(ak)
+
+        function af.Visible(an, ao)
+            ak.Visible = ao
+        end
+
+        function af.Edit(an, ao)
+            local ap = {
+                Title = ao.Title,
+                Icon = ao.Icon,
+                Enabled = ao.Enabled,
+                Position = ao.Position,
+                Draggable = ao.Draggable,
+                OnlyMobile = ao.OnlyMobile,
+                CornerRadius = ao.CornerRadius or UDim.new(1, 0),
+                StrokeThickness = ao.StrokeThickness or 2,
+                Color = ao.Color or ColorSequence.new(Color3.fromHex"40c9ff", Color3.fromHex"e81cff"),
+            }
+
+            if ap.Enabled == false then
+                ae.IsOpenButtonEnabled = false
+            end
+
+            if ap.OnlyMobile ~= false then
+                ap.OnlyMobile = true
+            else
+                ae.IsPC = false
+            end
+
+            if ap.Draggable == false and ai and aj then
+                ai.Visible = ap.Draggable
+                aj.Visible = ap.Draggable
+                if am then
+                    am:Set(ap.Draggable)
+                end
+            end
+
+            if ap.Position and ak then
+                ak.Position = ap.Position
+            end
+
+            if ah then
+                if ap.Title then
+                    ah.Text = ap.Title
+                    ab:ChangeTranslationKey(ah, ap.Title)
+                elseif ap.Title == nil then
+                end
+            end
+
+            if ap.Icon then
+                af:SetIcon(ap.Icon)
+            end
+
+            al.UIStroke.UIGradient.Color = ap.Color
+            if Glow then
+                Glow.UIGradient.Color = ap.Color
+            end
+
+            al.UICorner.CornerRadius = ap.CornerRadius
+            al.TextButton.UICorner.CornerRadius = UDim.new(ap.CornerRadius.Scale, ap.CornerRadius.Offset - 4)
+            al.UIStroke.UIickness = ap.StrokeThickness
+        end
+
+        return af
+    end
+
+    return aa
+end
+
+-- 模块x：提示工具模块（悬浮说明）
+function a.x()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.New(ae, af)
+        local ag = {
+            Container = nil,
+            ToolTipSize = 16,
+        }
+
+        local ah = ac("TextLabel", {
+            AutomaticSize = "XY",
+            TextWrapped = true,
+            BackgroundTransparency = 1,
+            FontFace = Font.new(ab.Font, Enum.FontWeight.Medium),
+            Text = ae,
+            TextSize = 17,
+            TextTransparency = 1,
+            ThemeTag = {
+                TextColor3 = "Text",
+            }
+        })
+
+        local ai = ac("UIScale", {
+            Scale = .9
+        })
+
+        local aj = ac("Frame", {
+            AnchorPoint = Vector2.new(0.5, 0),
+            AutomaticSize = "XY",
+            BackgroundTransparency = 1,
+            Parent = af,
+            Visible = false
+        }, {
+            ac("UISizeConstraint", {
+                MaxSize = Vector2.new(400, math.huge)
+            }),
+            ac("Frame", {
+                AutomaticSize = "XY",
+                BackgroundTransparency = 1,
+                LayoutOrder = 99,
+                Visible = false
+            }, {
+                ac("ImageLabel", {
+                    Size = UDim2.new(0, ag.ToolTipSize, 0, ag.ToolTipSize / 2),
+                    BackgroundTransparency = 1,
+                    Rotation = 180,
+                    Image = "rbxassetid://89524607682719",
+                    ThemeTag = {
+                        ImageColor3 = "Accent",
+                    },
+                }, {
+                    ac("ImageLabel", {
+                        Size = UDim2.new(0, ag.ToolTipSize, 0, ag.ToolTipSize / 2),
+                        BackgroundTransparency = 1,
+                        LayoutOrder = 99,
+                        ImageTransparency = .9,
+                        Image = "rbxassetid://89524607682719",
+                        ThemeTag = {
+                            ImageColor3 = "Text",
+                        },
+                    }),
+                }),
+            }),
+            ab.NewRoundFrame(14, "Squircle", {
+                AutomaticSize = "XY",
+                ThemeTag = {
+                    ImageColor3 = "Accent",
+                },
+                ImageTransparency = 1,
+                Name = "Background",
+            }, {
+                ac("Frame", {
+                    ThemeTag = {
+                        BackgroundColor3 = "Text",
+                    },
+                    AutomaticSize = "XY",
+                    BackgroundTransparency = 1,
+                }, {
+                    ac("UICorner", {
+                        CornerRadius = UDim.new(0, 16),
+                    }),
+                    ac("UIListLayout", {
+                        Padding = UDim.new(0, 12),
+                        FillDirection = "Horizontal",
+                        VerticalAlignment = "Center"
+                    }),
+                    ah,
+                    ac("UIPadding", {
+                        PaddingTop = UDim.new(0, 12),
+                        PaddingLeft = UDim.new(0, 12),
+                        PaddingRight = UDim.new(0, 12),
+                        PaddingBottom = UDim.new(0, 12),
+                    }),
+                })
+            }),
+            ai,
+            ac("UIListLayout", {
+                Padding = UDim.new(0, 0),
+                FillDirection = "Vertical",
+                VerticalAlignment = "Center",
+                HorizontalAlignment = "Center",
+            }),
+        })
+
+        ag.Container = aj
+
+        function ag.Open(ak)
+            aj.Visible = true
+            ad(aj.Background, .2, { ImageTransparency = 0 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+            ad(ah, .2, { TextTransparency = 0 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+            ad(ai, .18, { Scale = 1 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+        end
+
+        function ag.Close(ak)
+            ad(aj.Background, .3, { ImageTransparency = 1 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+            ad(ah, .3, { TextTransparency = 1 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+            ad(ai, .35, { Scale = .9 }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+            task.wait(.35)
+            aj.Visible = false
+            aj:Destroy()
+        end
+
+        return ag
+    end
+
+    return aa
+end
+
+-- 模块y：基础元素模块（通用UI组件）
+function a.y()
+    local aa = a.load'a'
+    local ab = aa.New
+    local ac = aa.NewRoundFrame
+    local ad = aa.Tween
+    game:GetService"UserInputService"
+
+    -- 辅助函数：HSB转RGB
+    local function Color3ToHSB(ae)
+        local af, ag, ah = ae.R, ae.G, ae.B
+        local ai = math.max(af, ag, ah)
+        local aj = math.min(af, ag, ah)
+        local ak = ai - aj
+        local al = 0
+
+        if ak ~= 0 then
+            if ai == af then
+                al = (ag - ah) / ak % 6
+            elseif ai == ag then
+                al = (ah - af) / ak + 2
+            else
+                al = (af - ag) / ak + 4
+            end
+            al = al * 60
+        else
+            al = 0
+        end
+
+        local am = (ai == 0) and 0 or (ak / ai)
+        local an = ai
+
+        return {
+            h = math.floor(al + 0.5),
+            s = am,
+            b = an
+        }
+    end
+
+    -- 辅助函数：计算亮度
+    local function GetPerceivedBrightness(ae)
+        local af = ae.R
+        local ag = ae.G
+        local ah = ae.B
+        return 0.299 * af + 0.587 * ag + 0.114 * ah
+    end
+
+    -- 辅助函数：获取文本颜色
+    local function GetTextColorForHSB(ae)
+        local af = Color3ToHSB(ae)
+        local ag, ah, ai = af.h, af.s, af.b
+
+        if GetPerceivedBrightness(ae) > 0.5 then
+            return Color3.fromHSV(ag / 360, 0, 0.05)
+        else
+            return Color3.fromHSV(ag / 360, 0, 0.98)
+        end
+    end
+
+    -- 辅助函数：获取元素位置
+    local function getElementPosition(ae, af)
+        if type(af) ~= "number" or af ~= math.floor(af) then
+            return nil, 1
+        end
+
+        local ag = #ae
+        if ag == 0 or af < 1 or af > ag then
+            return nil, 2
+        end
+
+        local function isDelimiter(ah)
+            if ah == nil then return true end
+            local ai = ah.__type
+            return ai == "Divider" or ai == "Space" or ai == "Section" or ai == "Code"
+        end
+
+        if isDelimiter(ae[af]) then
+            return nil, 3
+        end
+
+        local function calculate(ah, ai)
+            if ai == 1 then return "Squircle" end
+            if ah == 1 then return "Squircle-TL-TR" end
+            if ah == ai then return "Squircle-BL-BR" end
+            return "Square"
+        end
+
+        local ah = 1
+        local ai = 0
+
+        for aj = 1, ag do
+            local ak = ae[aj]
+            if isDelimiter(ak) then
+                if af >= ah and af <= aj - 1 then
+                    local al = af - ah + 1
+                    return calculate(al, ai)
+                end
+                ah = aj + 1
+                ai = 0
+            else
+                ai = ai + 1
+            end
+        end
+
+        if af >= ah and af <= ag then
+            local aj = af - ah + 1
+            return calculate(aj, ai)
+        end
+
+        return nil, 4
+    end
+
+    return function(ae)
+        local af = {
+            Title = ae.Title,
+            Desc = ae.Desc or nil,
+            Hover = ae.Hover,
+            Thumbnail = ae.Thumbnail,
+            ThumbnailSize = ae.ThumbnailSize or 80,
+            Image = ae.Image,
+            IconThemed = ae.IconThemed or false,
+            ImageSize = ae.ImageSize or 30,
+            Color = ae.Color,
+            Scalable = ae.Scalable,
+            Parent = ae.Parent,
+            Justify = ae.Justify or "Between",
+            UIPadding = ae.Window.ElementConfig.UIPadding,
+            UICorner = ae.Window.ElementConfig.UICorner,
+            UIElements = {},
+            Index = ae.Index
+        }
+
+        local ag = af.ImageSize
+        local ah = af.ThumbnailSize
+        local ai = true
+        local aj = 0
+        local ak
+        local al
+
+        if af.Thumbnail then
+            ak = aa.Image(
+                af.Thumbnail,
+                af.Title,
+                af.UICorner - 3,
+                ae.Window.Folder,
+                "Thumbnail",
+                false,
+                af.IconThemed
+            )
+            ak.Size = UDim2.new(1, 0, 0, ah)
+        end
+
+        if af.Image then
+            al = aa.Image(
+                af.Image,
+                af.Title,
+                af.UICorner - 3,
+                ae.Window.Folder,
+                "Image",
+                not af.Color and true or false
+            )
+            if typeof(af.Color) == "string" then
+                al.ImageLabel.ImageColor3 = GetTextColorForHSB(Color3.fromHex(aa.Colors[af.Color]))
+            elseif typeof(af.Color) == "Color3" then
+                al.ImageLabel.ImageColor3 = GetTextColorForHSB(af.Color)
+            end
+            al.Size = UDim2.new(0, ag, 0, ag)
+            aj = ag
+        end
+
+        -- 创建文本
+        local function CreateText(am, an)
+            local ao = typeof(af.Color) == "string"
+                and GetTextColorForHSB(Color3.fromHex(aa.Colors[af.Color]))
+                or typeof(af.Color) == "Color3"
+                and GetTextColorForHSB(af.Color)
+                or nil
+
+            return ab("TextLabel", {
+                BackgroundTransparency = 1,
+                Text = am or "",
+                TextSize = an == "Desc" and 15 or 17,
+                TextXAlignment = "Left",
+                ThemeTag = {
+                    TextColor3 = not af.Color and "Text" or nil,
+                },
+                TextColor3 = af.Color and ao or nil,
+                TextTransparency = an == "Desc" and .3 or 0,
+                TextWrapped = true,
+                Size = UDim2.new(af.Justify == "Between" and 1 or 0, 0, 0, 0),
+                AutomaticSize = af.Justify == "Between" and "Y" or "XY",
+                FontFace = Font.new(aa.Font, an == "Desc" and Enum.FontWeight.Medium or Enum.FontWeight.SemiBold)
+            })
+        end
+
+        local am = CreateText(af.Title, "Title")
+        local an = CreateText(af.Desc, "Desc")
+
+        if not af.Desc or af.Desc == "" then
+            an.Visible = false
+        end
+
+        af.UIElements.Container = ab("Frame", {
+            Size = UDim2.new(1, 0, 1, 0),
+            AutomaticSize = "Y",
+            BackgroundTransparency = 1,
+        }, {
+            ab("UIListLayout", {
+                Padding = UDim.new(0, af.UIPadding),
+                FillDirection = "Vertical",
+                VerticalAlignment = ae.Window.NewElements and "Top" or "Center",
+                HorizontalAlignment = af.Justify == "Between" and "Left" or "Center",
+            }),
+            ak,
+            ab("Frame", {
+                Size = UDim2.new(
+                    af.Justify == "Between" and 1 or 0,
+                    af.Justify == "Between" and -ae.TextOffset or 0,
+                    0,
+                    0
+                ),
+                AutomaticSize = af.Justify == "Between" and "Y" or "XY",
+                BackgroundTransparency = 1,
+                Name = "TitleFrame",
+            }, {
+                ab("UIListLayout", {
+                    Padding = UDim.new(0, af.UIPadding),
+                    FillDirection = "Horizontal",
+                    VerticalAlignment = ae.Window.NewElements and (af.Justify == "Between" and "Top" or "Center") or "Center",
+                    HorizontalAlignment = af.Justify ~= "Between" and af.Justify or "Center",
+                }),
+                al,
+                ab("Frame", {
+                    BackgroundTransparency = 1,
+                    AutomaticSize = af.Justify == "Between" and "Y" or "XY",
+                    Size = UDim2.new(
+                        af.Justify == "Between" and 1 or 0,
+                        af.Justify == "Between" and -aj or 0,
+                        1,
+                        0
+                    ),
+                    Name = "TitleFrame",
+                }, {
+                    ab("UIPadding", {
+                        PaddingTop = UDim.new(0, ae.Window.NewElements and af.UIPadding / 2 or 0),
+                        PaddingLeft = UDim.new(0, ae.Window.NewElements and af.UIPadding / 2 or 0),
+                        PaddingRight = UDim.new(0, ae.Window.NewElements and af.UIPadding / 2 or 0),
+                        PaddingBottom = UDim.new(0, ae.Window.NewElements and af.UIPadding / 2 or 0),
+                    }),
+                    ab("UIListLayout", {
+                        Padding = UDim.new(0, 6),
+                        FillDirection = "Vertical",
+                        VerticalAlignment = "Center",
+                        HorizontalAlignment = "Left",
+                    }),
+                    am,
+                    an
+                }),
+            })
+        })
+
+        local ao = aa.Image(
+            "lock",
+            "lock",
+            0,
+            ae.Window.Folder,
+            "Lock",
+            false
+        )
+        ao.Size = UDim2.new(0, 20, 0, 20)
+        ao.ImageLabel.ImageColor3 = Color3.new(1, 1, 1)
+        ao.ImageLabel.ImageTransparency = .4
+
+        local ap = ab("TextLabel", {
+            Text = "Locked",
+            TextSize = 18,
+            FontFace = Font.new(aa.Font, Enum.FontWeight.Medium),
+            AutomaticSize = "XY",
+            BackgroundTransparency = 1,
+            TextColor3 = Color3.new(1, 1, 1),
+            TextTransparency = .05,
+        })
+
+        local aq = ab("Frame", {
+            Size = UDim2.new(1, af.UIPadding * 2, 1, af.UIPadding * 2),
+            BackgroundTransparency = 1,
+            AnchorPoint = Vector2.new(0.5, 0.5),
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            ZIndex = 9999999,
+        })
+
+        local ar, as = ac(af.UICorner, "Squircle", {
+            Size = UDim2.new(1, 0, 1, 0),
+            ImageTransparency = .25,
+            ImageColor3 = Color3.new(0, 0, 0),
+            Visible = false,
+            Active = false,
+            Parent = aq,
+        }, {
+            ab("UIListLayout", {
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center",
+                HorizontalAlignment = "Center",
+                Padding = UDim.new(0, 8)
+            }),
+            ao, ap
+        }, nil, true)
+
+        local at, au = ac(af.UICorner, "Squircle-Outline", {
+            Size = UDim2.new(1, 0, 1, 0),
+            ImageTransparency = 1,
+            Active = false,
+            ThemeTag = {
+                ImageColor3 = "Text",
+            },
+            Parent = aq,
+        }, {
+            ab("UIListLayout", {
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center",
+                HorizontalAlignment = "Center",
+                Padding = UDim.new(0, 8)
+            }),
+        }, nil, true)
+
+        local av, aw = ac(af.UICorner, "Squircle", {
+            Size = UDim2.new(1, 0, 1, 0),
+            ImageTransparency = 1,
+            Active = false,
+            ThemeTag = {
+                ImageColor3 = "Text",
+            },
+            Parent = aq,
+        }, {
+            ab("UIListLayout", {
+                FillDirection = "Horizontal",
+                VerticalAlignment = "Center",
+                HorizontalAlignment = "Center",
+                Padding = UDim.new(0, 8)
+            }),
+        }, nil, true)
+
+        local ax, ay = ac(af.UICorner, "Squircle", {
+            Size = UDim2.new(1, 0, 0, 0),
+            AutomaticSize = "Y",
+            ImageTransparency = af.Color and .05 or .93,
+            Parent = ae.Parent,
+            ThemeTag = {
+                ImageColor3 = not af.Color and "Text" or nil
+            },
+            ImageColor3 = af.Color and
+            (
+                typeof(af.Color) == "string"
+                and Color3.fromHex(aa.Colors[af.Color])
+                or typeof(af.Color) == "Color3"
+                and af.Color
+            ) or nil
+        }, {
+            af.UIElements.Container,
+            aq,
+            ab("UIPadding", {
+                PaddingTop = UDim.new(0, af.UIPadding),
+                PaddingLeft = UDim.new(0, af.UIPadding),
+                PaddingRight = UDim.new(0, af.UIPadding),
+                PaddingBottom = UDim.new(0, af.UIPadding),
+            }),
+        }, true, true)
+
+        af.UIElements.Main = ax
+        af.UIElements.Locked = ar
+
+        if af.Hover then
+            aa.AddSignal(ax.MouseEnter, function()
+                if ai then
+                    ad(ax, .05, { ImageTransparency = af.Color and .15 or .9 }):Play()
+                end
+            end)
+
+            aa.AddSignal(ax.InputEnded, function()
+                if ai then
+                    ad(ax, .05, { ImageTransparency = af.Color and .05 or .93 }):Play()
+                end
+            end)
+        end
+
+        function af.SetTitle(az, aA)
+            af.Title = aA
+            am.Text = aA
+        end
+
+        function af.SetDesc(az, aA)
+            af.Desc = aA
+            an.Text = aA or ""
+            if not aA then
+                an.Visible = false
+            elseif not an.Visible then
+                an.Visible = true
+            end
+        end
+
+        function af.Colorize(az, aA, aB)
+            if af.Color then
+                aA[aB] = typeof(af.Color) == "string"
+                    and GetTextColorForHSB(Color3.fromHex(aa.Colors[af.Color]))
+                    or typeof(af.Color) == "Color3"
+                    and GetTextColorForHSB(af.Color)
+                    or nil
+            end
+        end
+
+        if ae.ElementTable then
+            aa.AddSignal(am:GetPropertyChangedSignal"Text", function()
+                if af.Title ~= am.Text then
+                    af:SetTitle(am.Text)
+                    ae.ElementTable.Title = am.Text
+                end
+            end)
+
+            aa.AddSignal(an:GetPropertyChangedSignal"Text", function()
+                if af.Desc ~= an.Text then
+                    af:SetDesc(an.Text)
+                    ae.ElementTable.Desc = an.Text
+                end
+            end)
+        end
+
+        function af.SetThumbnail(az, aA, aB)
+            af.Thumbnail = aA
+            if aB then
+                af.ThumbnailSize = aB
+                ah = aB
+            end
+
+            if ak then
+                if aA then
+                    ak:Destroy()
+                    ak = aa.Image(
+                        aA,
+                        af.Title,
+                        af.UICorner - 3,
+                        ae.Window.Folder,
+                        "Thumbnail",
+                        false,
+                        af.IconThemed
+                    )
+                    ak.Size = UDim2.new(1, 0, 0, ah)
+                    ak.Parent = af.UIElements.Container
+                    local aC = af.UIElements.Container:FindFirstChild"UIListLayout"
+                    if aC then
+                        ak.LayoutOrder = -1
+                    end
+                else
+                    ak.Visible = false
+                end
+            else
+                if aA then
+                    ak = aa.Image(
+                        aA,
+                        af.Title,
+                        af.UICorner - 3,
+                        ae.Window.Folder,
+                        "Thumbnail",
+                        false,
+                        af.IconThemed
+                    )
+                    ak.Size = UDim2.new(1, 0, 0, ah)
+                    ak.Parent = af.UIElements.Container
+                    local aC = af.UIElements.Container:FindFirstChild"UIListLayout"
+                    if aC then
+                        ak.LayoutOrder = -1
+                    end
+                end
+            end
+        end
+
+        function af.SetImage(az, aA, aB, aC, aD)
+            af.Image = aA
+            if aB then
+                af.ImageSize = aB
+                ag = aB
+            end
+
+            if aC ~= nil then
+                af.Color = aC
+            end
+
+            if aD ~= nil then
+                af.IconThemed = aD
+            end
+
+            if al then
+                if aA then
+                    al.Size = UDim2.new(0, ag, 0, ag)
+                    aa.UpdateImage(al, aA, af.Title)
+                    if typeof(af.Color) == "string" then
+                        al.ImageLabel.ImageColor3 = GetTextColorForHSB(Color3.fromHex(aa.Colors[af.Color]))
+                    elseif typeof(af.Color) == "Color3" then
+                        al.ImageLabel.ImageColor3 = GetTextColorForHSB(af.Color)
+                    elseif not af.Color then
+                        al.ImageLabel.ImageColor3 = Color3.new(1, 1, 1)
+                    end
+                    al.Visible = true
+                    aj = ag
+                else
+                    al.Visible = false
+                    aj = 0
+                end
+            else
+                if aA then
+                    al = aa.Image(
+                        aA,
+                        af.Title,
+                        af.UICorner - 3,
+                        ae.Window.Folder,
+                        "Image",
+                        not af.Color and true or false
+                    )
+                    if typeof(af.Color) == "string" then
+                        al.ImageLabel.ImageColor3 = GetTextColorForHSB(Color3.fromHex(aa.Colors[af.Color]))
+                    elseif typeof(af.Color) == "Color3" then
+                        al.ImageLabel.ImageColor3 = GetTextColorForHSB(af.Color)
+                    end
+                    al.Size = UDim2.new(0, ag, 0, ag)
+                    aj = ag
+                    local aE = af.UIElements.Container:FindFirstChild"Frame"
+                    if aE then
+                        al.Parent = aE
+                        local b = aE:FindFirstChild"UIListLayout"
+                        if b then
+                            al.LayoutOrder = 0
+                        end
+                    end
+                end
+            end
+
+            local aE = af.UIElements.Container:FindFirstChild"Frame"
+            if aE then
+                local b = aE:FindFirstChild"Frame"
+                if b then
+                    b.Size = UDim2.new(1, -aj, 1, 0)
+                end
+            end
+        end
+
+        function af.Destroy(az)
+            ax:Destroy()
+        end
+
+        function af.Lock(az)
+            ai = false
+            ar.Active = true
+            ar.Visible = true
+        end
+
+        function af.Unlock(az)
+            ai = true
+            ar.Active = false
+            ar.Visible = false
+        end
+
+        function af.Highlight(az)
+            local aA = ab("UIGradient", {
+                Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+                    ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+                    ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
+                },
+                Transparency = NumberSequence.new{
+                    NumberSequenceKeypoint.new(0, 1),
+                    NumberSequenceKeypoint.new(0.1, 0.9),
+                    NumberSequenceKeypoint.new(0.5, 0.3),
+                    NumberSequenceKeypoint.new(0.9, 0.9),
+                    NumberSequenceKeypoint.new(1, 1)
+                },
+                Rotation = 0,
+                Offset = Vector2.new(-1, 0),
+                Parent = at
+            })
+
+            local aB = ab("UIGradient", {
+                Color = ColorSequence.new{
+                    ColorSequenceKeypoint.new(0, Color3.new(1, 1, 1)),
+                    ColorSequenceKeypoint.new(0.5, Color3.new(1, 1, 1)),
+                    ColorSequenceKeypoint.new(1, Color3.new(1, 1, 1))
+                },
+                Transparency = NumberSequence.new{
+                    NumberSequenceKeypoint.new(0, 1),
+                    NumberSequenceKeypoint.new(0.15, 0.8),
+                    NumberSequenceKeypoint.new(0.5, 0.1),
+                    NumberSequenceKeypoint.new(0.85, 0.8),
+                    NumberSequenceKeypoint.new(1, 1)
+                },
+                Rotation = 0,
+                Offset = Vector2.new(-1, 0),
+                Parent = av
+            })
+
+            at.ImageTransparency = 0.25
+            av.ImageTransparency = 0.88
+
+            ad(aA, 0.75, {
+                Offset = Vector2.new(1, 0)
+            }):Play()
+
+            ad(aB, 0.75, {
+                Offset = Vector2.new(1, 0)
+            }):Play()
+
+            task.spawn(function()
+                task.wait(.75)
+                at.ImageTransparency = 1
+                av.ImageTransparency = 1
+                aA:Destroy()
+                aB:Destroy()
+            end)
+        end
+
+        function af.UpdateShape(az)
+            if ae.Window.NewElements then
+                local aA = getElementPosition(az.Elements, af.Index)
+                if aA and ax then
+                    ay:SetType(aA)
+                    as:SetType(aA)
+                    aw:SetType(aA)
+                    au:SetType(aA .. "-Outline")
+                end
+            end
+        end
+
+        return af
+    end
+end
+
+-- 模块z：段落控件模块（文本布局）
+function a.z()
+    local aa = {}
+    local ab = a.load'a'
+    local ac = ab.New
+    local ad = ab.Tween
+
+    function aa.New(ae, af)
+        af.Hover = false
+        af.TextOffset = 0
+        af.IsButtons = af.Buttons and #af.Buttons > 0 and true or false
+
+        local ag = {
+            __type = "Paragraph",
+            Title = af.Title or "Paragraph",
+            Desc = af.Desc or nil,
+            Locked = af.Locked or false,
+        }
+
+        local ah = a.load'y'(af)
+        ag.ParagraphFrame = ah
+
+        if af.Buttons and #af.Buttons > 0 then
+            local ai = ab("Frame", {
+                Size = UDim2.new(1, 0, 0, 38),
+                BackgroundTransparency = 1,
+                AutomaticSize = "Y",
+                Parent = ah.UIElements.Container
+            }, {
+                ab("UIListLayout", {
+                    Padding = UDim.new(0, 10),
+                    FillDirection = "Vertical",
+                })
+            })
+
+            for aj, ak in next, af.Buttons do
+                local al = a.load'j'.New(ak.Title, ak.Icon, ak.Callback, "White", ai
+-- 模块V：主窗口模块（多窗口+无限画布）
+function a.V()
+    local aa = a.load'a'
+    local ab = a.load'w'.New
+    local ac = a.load't'.New
+    local ad = a.load'u'
+    local ae = a.load'v'
+
+    return function(af)
+        local ag = {
+            Title = af.Title or "UI Library",
+            Author = af.Author,
+            Icon = af.Icon,
+            IconThemed = af.IconThemed,
+            Folder = af.Folder,
+            Resizable = af.Resizable,
+            Background = af.Background,
+            BackgroundImageTransparency = af.BackgroundImageTransparency or 0,
+            User = af.User or {},
+            Size = af.Size,
+            MinSize = af.MinSize or Vector2.new(560, 350),
+            MaxSize = af.MaxSize or Vector2.new(850, 560),
+            ToggleKey = af.ToggleKey,
+            Transparent = af.Transparent or false,
+            HideSearchBar = af.HideSearchBar,
+            ScrollBarEnabled = af.ScrollBarEnabled or false,
+            SideBarWidth = af.SideBarWidth or 200,
+            NewElements = af.NewElements or false,
+            HidePanelBackground = af.HidePanelBackground or false,
+            AutoScale = af.AutoScale,
+            Position = UDim2.new(0.5, 0, 0.5, 0),
+            IconSize = 22,
+            UICorner = 16,
+            UIPadding = 14,
+            UIElements = {},
+            CanDropdown = true,
+            Closed = false,
+            Parent = af.Parent,
+            Destroyed = false,
+            IsFullscreen = false,
+            CanResize = false,
+            IsOpenButtonEnabled = true,
+            ConfigManager = nil,
+            CurrentTab = nil,
+            TabModule = nil,
+            OnOpenCallback = nil,
+            OnCloseCallback = nil,
+            OnDestroyCallback = nil,
+            Gap = 5,
+            TopBarButtons = {},
+            AllElements = {},
+            ElementConfig = {}
+        }
+
+        ag.ElementConfig = {
+            UIPadding = ag.NewElements and 10 or 13,
+            UICorner = ag.NewElements and 23 or 12,
+        }
+
+        local ah = ag.Size or UDim2.new(0, 580, 0, 460)
+        ag.Size = UDim2.new(
+            ah.X.Scale,
+            math.clamp(ah.X.Offset, ag.MinSize.X, ag.MaxSize.X),
+            ah.Y.Scale,
+            math.clamp(ah.Y.Offset, ag.MinSize.Y, ag.MaxSize.Y)
+        )
+
+        if ag.HideSearchBar ~= false then ag.HideSearchBar = true end
+        if ag.AutoScale ~= false then ag.AutoScale = true end
+        if ag.Resizable ~= false then
+            ag.CanResize = true
+            ag.Resizable = true
+        end
+
+        if ag.Folder then
+            makefolder("WindUI/" .. ag.Folder)
+        end
+
+        local ai = aa.New("UICorner", {
+            CornerRadius = UDim.new(0, ag.UICorner)
+        })
+
+        if ag.Folder then
+            ag.ConfigManager = ae:Init(ag)
+        end
+
+        local aj = aa.New("Frame", {
+            Size = UDim2.new(0, 32, 0, 32),
+            Position = UDim2.new(1, 0, 1, 0),
+            AnchorPoint = Vector2.new(.5, .5),
+            BackgroundTransparency = 1,
+            ZIndex = 99,
+            Active = true
+        }, {
+            aa.New("ImageLabel", {
+                Size = UDim2.new(0, 96, 0, 96),
+                BackgroundTransparency = 1,
+                Image = "rbxassetid://120997033468887",
+                Position = UDim2.new(0.5, -16, 0.5, -16),
+                AnchorPoint = Vector2.new(0.5, 0.5),
+                ImageTransparency = 1,
+            })
+        })
+
+        local ak = aa.NewRoundFrame(ag.UICorner, "Squircle", {
+            Size = UDim2.new(1, 0, 1, -240),
+            ImageTransparency = 1,
+            ImageColor3 = Color3.new(0, 0, 0),
+            ZIndex = 98,
+            Active = false,
+        }, {
+            aa.New("ImageLabel", {
+                Name = "Background",
+                Image = ag.Background,
+                BackgroundTransparency = 1,
+                Size = UDim2.new(1, 0, 1, 0),
+                ScaleType = "Crop",
+                ImageTransparency = ag.BackgroundImageTransparency
+            }, {
+                ai
+            }),
+            aj,
+            ai,
+        })
+
+        local al = aa.NewRoundFrame(ag.UICorner, "Squircle", {
+            ImageTransparency = 1,
+            Size = UDim2.new(1, 0, 1, 0),
+            ZIndex = 999,
+            Active = false,
+        })
+
+        -- 魔改：3D边框添加
+        local am = aa.Create3DBorder(ag.UIElements.Main, ag.UICorner)
+
+        ag.UIElements.SideBar = aa.New("ScrollingFrame", {
+            Size = UDim2.new(
+                1,
+                ag.ScrollBarEnabled and -3 - (ag.UIPadding / 2) or 0,
+                1,
+                not ag.HideSearchBar and -45 or 0
+            ),
+            Position = UDim2.new(0, 0, 1, 0),
+            AnchorPoint = Vector2.new(0, 1),
+            BackgroundTransparency = 1,
+            ScrollBarThickness = 0,
+            ElasticBehavior = "Never",
+            CanvasSize = UDim2.new(0, 0, 0, 0),
+            AutomaticCanvasSize = "Y",
+            ScrollBarImageTransparency = 1,
+            VerticalScrollBarPosition = "Left",
+        }, {
+            aa.New("Frame", {
+                BackgroundTransparency = 1,
+                AutomaticSize = "Y",
+                Size = UDim2.new(1, 0, 0, 0),
+                Name = "Frame",
+            }, {
+                aa.New("UIPadding", {
+                    PaddingTop = UDim.new(0, ag.UIPadding / 2),
+                    PaddingBottom = UDim.new(0, ag.UIPadding / 2),
+                }),
+                aa.New("UIListLayout", {
+                    SortOrder = "LayoutOrder",
+                    Padding = UDim.new(0, ag.Gap)
+                })
+            }),
+            aa.New("UIPadding", {
+                PaddingLeft = UDim.new(0, ag.UIPadding / 2),
+                PaddingRight = UDim.new(0, ag.UIPadding / 2),
+            }),
+        })
+
+        ag.UIElements.SideBarContainer = aa.New("Frame", {
+            Size = UDim2.new(0, ag.SideBarWidth, 1, ag.User.Enabled and -94 - (ag.UIPadding * 2) or -52),
+            Position = UDim2.new(0, 0, 0, 52),
+            BackgroundTransparency = 1,
+            Visible = true,
+        }, {
+            aa.New("Frame", {
+                Name = "Content",
+                BackgroundTransparency = 1,
+                Size = UDim2.new(
+                    1,
+                    0,
+                    1,
+                    not ag.HideSearchBar and -45 - ag.UIPadding / 2 or 0
+                ),
+                Position = UDim2.new(0, 0, 1, 0),
+                AnchorPoint = Vector2.new(0, 1),
+            }),
+            ag.UIElements.SideBar,
+        })
+
+        if ag.ScrollBarEnabled then
+            ac(ag.UIElements.SideBar, ag.UIElements.SideBarContainer.Content, ag, 3)
+        end
+
+        ag.UIElements.MainBar = aa.New("Frame", {
+            Size = UDim2.new(1, -ag.UIElements.SideBarContainer.AbsoluteSize.X, 1, -52),
+            Position = UDim2.new(1, 0, 1, 0),
+            AnchorPoint = Vector2.new(1, 1),
+            BackgroundTransparency = 1,
+        }, {
+            aa.NewRoundFrame(ag.UICorner - (ag.UIPadding / 2), "Squircle", {
+                Size = UDim2.new(1, 0, 1, 0),
+                ImageColor3 = Color3.new(1, 1, 1),
+                ZIndex = 3,
+                ImageTransparency = .95,
+                Name = "Background",
+                Visible = not ag.HidePanelBackground
+            }),
+            aa.New("UIPadding", {
+                PaddingTop = UDim.new(0, ag.UIPadding / 2),
+                PaddingLeft = UDim.new(0, ag.UIPadding / 2),
+                PaddingRight = UDim.new(0, ag.UIPadding / 2),
+                PaddingBottom = UDim.new(0, ag.UIPadding / 2),
+            })
+        })
+
+        -- 魔改：多窗口支持初始化
+        ag.Windows = {}
+        ag.CurrentWindowIndex = 1
+
+        -- 魔改：无限画布初始化
+        ag.CanvasMode = af.CanvasMode or false
+        ag.CanvasScale = 1
+
+        -- 魔改：窗口切换方法
+        function ag.SwitchWindow(index)
+            for i, win in ipairs(ag.Windows) do
+                win:Close()
+            end
+            if ag.Windows[index] then
+                ag.Windows[index]:Open()
+                ag.CurrentWindowIndex = index
+            end
+        end
+
+        -- 魔改：添加子窗口
+        function ag.AddChildWindow(childWin)
+            childWin.UIElements.Main.Parent = ag.UIElements.MainBar
+            childWin.UIElements.Main.Position = UDim2.new(0.1, 0, 0.1, 0)
+            childWin.UIElements.Main.Size = UDim2.new(0.8, 0, 0.8, 0)
+            table.insert(ag.Windows, childWin)
+        end
+
+        -- 魔改：画布缩放控制
+        function ag.ZoomCanvas(scale)
+            ag.CanvasScale = math.clamp(ag.CanvasScale + scale, 0.2, 2)
+            ag.UIElements.Main.UIScale.Scale = ag.CanvasScale
+        end
+
+        -- 魔改：键盘导航初始化
+        aa.EnableKeyboardNavigation()
+
+        -- 窗口打开/关闭方法（保留原版逻辑并扩展）
+        function ag.Open()
+            task.spawn(function()
+                if ag.OnOpenCallback then
+                    task.spawn(function()
+                        aa.SafeCallback(ag.OnOpenCallback)
+                    end)
+                end
+                task.wait(.06)
+                ag.Closed = false
+                aa.Tween(ag.UIElements.Main.Background, 0.2, {
+                    ImageTransparency = ag.Transparent and af.WindUI.TransparencyValue or 0,
+                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+                
+                aa.Tween(ag.UIElements.Main.Background, 0.4, {
+                    Size = UDim2.new(1, 0, 1, 0),
+                }, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out):Play()
+                
+                aa.Tween(ag.UIElements.Main, 0.45, {
+                    Size = ag.IsFullscreen and UDim2.new(1, -20, 1, -72) or ag.Size,
+                    Position = ag.IsFullscreen and UDim2.new(0.5, 0, 0.5, 26) or ag.Position
+                }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+
+                task.spawn(function()
+                    task.wait(.3)
+                    aa.Tween(aj, .45, {
+                        Size = UDim2.new(0, 200, 0, 4),
+                        ImageTransparency = .8
+                    }, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out):Play()
+                    if ag.Resizable then
+                        aa.Tween(ai.ImageLabel, .45, {
+                            ImageTransparency = .8
+                        }, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out):Play()
+                        ag.CanResize = true
+                    end
+                end)
+
+                ag.CanDropdown = true
+                ag.UIElements.Main.Visible = true
+                task.spawn(function()
+                    task.wait(.05)
+                    ag.UIElements.Main:WaitForChild("Main").Visible = true
+                end)
+            end)
+        end
+
+        function ag.Close()
+            local ai = {}
+            if ag.OnCloseCallback then
+                task.spawn(function()
+                    aa.SafeCallback(ag.OnCloseCallback)
+                end)
+            end
+            ag.UIElements.Main:WaitForChild("Main").Visible = false
+            ag.CanDropdown = false
+            ag.Closed = true
+            
+            aa.Tween(ag.UIElements.Main.Background, 0.32, {
+                ImageTransparency = 1,
+            }, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut):Play()
+            
+            aa.Tween(ag.UIElements.Main.Background, 0.4, {
+                Size = UDim2.new(1, 0, 1, -240),
+            }, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut):Play()
+            
+            aa.Tween(ag.UIElements.Main, 0.45, {
+                Size = UDim2.new(0, 580, 0, 460),
+                Position = UDim2.new(0.5, 0, 0.5, 0)
+            }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+
+            aa.Tween(aj, .3, {
+                Size = UDim2.new(0, 0, 0, 4),
+                ImageTransparency = 1
+            }, Enum.EasingStyle.Exponential, Enum.EasingDirection.InOut):Play()
+            
+            aa.Tween(ai.ImageLabel, .3, {
+                ImageTransparency = 1
+            }, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out):Play()
+
+            ag.CanResize = false
+            task.spawn(function()
+                task.wait(0.4)
+                ag.UIElements.Main.Visible = false
+            end)
+
+            function ai.Destroy()
+                if ag.OnDestroyCallback then
+                    task.spawn(function()
+                        aa.SafeCallback(ag.OnDestroyCallback)
+                    end)
+                end
+                ag.Destroyed = true
+                task.wait(0.4)
+                af.WindUI.ScreenGui:Destroy()
+                af.WindUI.NotificationGui:Destroy()
+                af.WindUI.DropdownGui:Destroy()
+            end
+            return ai
+        end
+
+        -- 魔改：全屏切换
+        function ag.ToggleFullscreen()
+            ag.IsFullscreen = not ag.IsFullscreen
+            aa.Tween(ag.UIElements.Main, 0.45, {
+                Size = ag.IsFullscreen and UDim2.new(1, -20, 1, -72) or ag.Size,
+                Position = ag.IsFullscreen and UDim2.new(0.5, 0, 0.5, 26) or ag.Position
+            }, Enum.EasingStyle.Quint, Enum.EasingDirection.Out):Play()
+        end
+
+        -- 魔改：语音控制窗口
+        if af.VoiceControl then
+            aa.EnableVoiceControl(ag, "open ui", function()
+                ag:Toggle()
+            end)
+            aa.EnableVoiceControl(ag, "close ui", function()
+                ag:Close()
+            end)
+        end
+
+        -- 初始化调用
+        task.spawn(function()
+            ag:Open()
+        end)
+
+        return ag
+    end
+end
+
+-- ==============================
+-- 全局导出与初始化
+-- ==============================
+local aa = {
+    Window = nil,
+    Windows = {}, -- 多窗口存储
+    Theme = nil,
+    Creator = a.load'a',
+    LocalizationModule = a.load'b',
+    NotificationModule = a.load'c',
+    Themes = a.load'd',
+    Transparent = false,
+    TransparencyValue = .15,
+    UIScale = 1,
+    Version = "0.0.0",
+    Services = a.load'h',
+    OnThemeChangeFunction = nil,
+}
+
+local ac = game:GetService"HttpService"
+local ae = ac:JSONDecode(a.load'i')
+if ae then aa.Version = ae.version end
+
+local af = a.load'm'
+local ag = aa.Services
+local ah = aa.Themes
+local ai = aa.Creator
+local aj = ai.New
+local ak = ai.Tween
+
+ai.Themes = ah
+ai.Init(aa)
+
+math.clamp(aa.TransparencyValue, 0, 1)
+
+local al = aa.NotificationModule.Init(aa.NotificationGui)
+
+-- 通知API
+function aa.Notify(am, an)
+    an.Holder = al.Frame
+    an.Window = aa.Window
+    return aa.NotificationModule.New(an)
+end
+
+-- 主题管理API
+function aa.SetTheme(am, an)
+    if ah[an] then
+        aa.Theme = ah[an]
+        ai.SetTheme(ah[an])
+        if aa.OnThemeChangeFunction then
+            aa.OnThemeChangeFunction(an)
+        end
+        return ah[an]
+    end
+    return nil
+end
+
+-- 多窗口创建API
+function aa.CreateWindow(am)
+    local an = a.load'V'
+    if not isfolder"WindUI" then makefolder"WindUI" end
+    if am.Folder then makefolder(am.Folder) else makefolder(am.Title) end
+    
+    am.WindUI = aa
+    am.Parent = aa.ScreenGui.Window
+    
+    -- 密钥验证（保留原版完整逻辑）
+    local ao = true
+    local ap = gethwid or function() return game:GetService"Players".LocalPlayer.UserId end
+    local aq = ap()
+    if am.KeySystem then
+        ao = false
+        local function loadKeysystem()
+            af.new(am, aq, function(ar) ao = ar end)
+        end
+        local ar = am.Folder .. "/" .. aq .. ".key"
+        if not am.KeySystem.API then
+            if am.KeySystem.SaveKey and isfile(ar) then
+                local as = readfile(ar)
+                local at = (type(am.KeySystem.Key)=="table") and table.find(am.KeySystem.Key, as) or tostring(am.KeySystem.Key)==tostring(as)
+                if at then ao = true else loadKeysystem() end
+            else loadKeysystem() end
+        else
+            if isfile(ar) then
+                local as = readfile(ar)
+                local at = false
+                for au, av in next, am.KeySystem.API do
+                    local aw = aa.Services[av.Type]
+                    if aw then
+                        local ax = {}
+                        for b, e in next, aw.Args do table.insert(ax, av[e]) end
+                        local g = aw.New(table.unpack(ax))
+                        local h = g.Verify(as)
+                        if h then at = true break end
+                    end
+                end
+                ao = at
+                if not at then loadKeysystem() end
+            else loadKeysystem() end
+        end
+    end
+    repeat task.wait() until ao
+
+    -- 创建窗口并添加到多窗口列表
+    local ar = an(am)
+    aa.Transparent = am.Transparent
+    table.insert(aa.Windows, ar)
+    aa.Window = ar
+
+    -- 初始化3D边框与霓虹效果
+    if am.Enable3DBorder then
+        ai.Create3DBorder(ar.UIElements.Main, ar.UICorner)
+    end
+    if am.EnableNeonEffect then
+        ai.AddNeonEffect(ar.UIElements.Main, true)
+    end
+
+    return ar
+end
+
+-- 全局初始化
+do
+    local am = game:GetService"Players"and game:GetService"Players".LocalPlayer or nil
+    local an = protectgui or(syn and syn.protect_gui)or function()end
+    local ao = gethui and gethui()or game.CoreGui
+
+    aa.ScreenGui = aj("ScreenGui", {
+        Name = "WindUI",
+        Parent = ao,
+        IgnoreGuiInset = true,
+        ScreenInsets = "None",
+    }, {
+        aj("UIScale", { Scale = aa.UIScale }),
+        aj("Folder", { Name = "Window" }),
+        aj("Folder", { Name = "KeySystem" }),
+        aj("Folder", { Name = "Popups" }),
+        aj("Folder", { Name = "ToolTips" })
+    })
+
+    aa.NotificationGui = aj("ScreenGui", {
+        Name = "WindUI/Notifications",
+        Parent = ao,
+        IgnoreGuiInset = true,
+    })
+
+    aa.DropdownGui = aj("ScreenGui", {
+        Name = "WindUI/Dropdowns",
+        Parent = ao,
+        IgnoreGuiInset = true,
+    })
+
+    an(aa.ScreenGui)
+    an(aa.NotificationGui)
+    an(aa.DropdownGui)
+
+    -- 默认主题设置
+    aa:SetTheme("Dark")
+end
+
+return aa

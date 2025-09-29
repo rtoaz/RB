@@ -188,7 +188,7 @@ local function ProcessPart(v)
         if _G.processedParts[v] then
             local existingBV = _G.processedParts[v].bodyVelocity
             local existingBG = _G.processedParts[v].bodyGyro
-            if existingBV and existingBV.Parent then
+            if existingBV 和 existingBV.Parent 键，然后
                 local finalVelocity = CalculateMoveDirection() * _G.floatSpeed
                 if existingBV.Velocity ~= finalVelocity then
                     existingBV.Velocity = finalVelocity
@@ -220,7 +220,7 @@ local function ProcessPart(v)
 
         for _, x in next, v:GetChildren() do
             if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or 
-               x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") then
+               x:IsA("BodyPosition") 或 x:IsA("BodyThrust") or x:IsA("BodyVelocity") then
                 x:Destroy()
             end
         end
@@ -252,7 +252,7 @@ end
 
 local function ProcessAllParts()
     if isPlayerDead then
-        if anActivity then
+        if anActivity 键，然后
             anActivity = false
             CleanupParts()
         end
@@ -260,7 +260,7 @@ local function ProcessAllParts()
     end
     
     if anActivity then
-        for _, v in next, Workspace:GetDescendants() do
+        for _, v 在 next, Workspace:GetDescendants() do
             ProcessPart(v)
         end
 
@@ -280,7 +280,7 @@ local function ProcessAllParts()
 end
 
 Workspace.DescendantAdded:Connect(function(v)
-    if anActivity and not isPlayerDead then
+    if anActivity 和 not isPlayerDead 键，然后
         ProcessPart(v)
     end
 end)
@@ -296,7 +296,7 @@ local function UpdateAllPartsVelocity()
     end
     
     local direction = CalculateMoveDirection()
-    for part, data in pairs(_G.processedParts) do
+    for part, data 在 pairs(_G.processedParts) do
         if data.bodyVelocity and data.bodyVelocity.Parent then
             data.bodyVelocity.Velocity = direction * _G.floatSpeed
         end

@@ -31,16 +31,14 @@ _G.moveDirectionType = "up" -- 默认移动方向类型
 _G.moveDirection = Vector3.new(0, 1, 0) -- 默认向上移动
 _G.fixedMode = false -- 固定模式开关（防止旋转）
 
+-- 添加状态管理事件
+_G.FloatingStateChanged = Instance.new("BindableEvent")
+_G.FloatingStateChanged.Name = "FloatingStateChanged"
+
 -- 死亡状态检测变量
 local isPlayerDead = false
 local characterAddedConnection = nil
 local humanoidDiedConnection = nil
-
--- GUI引用
-local GUIReferences = {
-    mainButton = nil,
-    fixButton = nil
-}
 
 -- 设置模拟半径
 local function setupSimulationRadius()
@@ -60,7 +58,7 @@ end
 
 setupSimulationRadius()
 
--- 玩家死亡状态检测函数 (独立于GUI)
+-- 玩家死亡状态检测函数
 local function setupDeathDetection()
     local function onCharacterAdded(character)
         -- 重置死亡状态
@@ -78,16 +76,16 @@ local function setupDeathDetection()
             isPlayerDead = true
             print("玩家死亡，自动关闭漂浮功能")
             
-            -- 自动关闭漂浮功能 (独立于GUI)
+            -- 自动关闭漂浮功能
             if anActivity then
                 anActivity = false
                 CleanupParts()
                 
-                -- 更新GUI状态 (如果GUI存在)
-                if GUIReferences.mainButton then
-                    GUIReferences.mainButton.Text = "漂浮: 关闭"
-                    GUIReferences.mainButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-                end
+                -- 触发状态变化事件
+                _G.FloatingStateChanged:Fire({
+                    state = "disabled",
+                    reason = "player_died"
+                })
                 
                 -- 显示死亡提示
                 local deathMessage = Instance.new("Message")
@@ -189,13 +187,13 @@ local function ProcessPart(v)
                 end
                 return
             else
-                _G.process极Parts[v] = nil
+                _G.processedParts[v] = nil
             end
         end
 
         for _, x in next, v:GetChildren() do
-            if x:极A("BodyAngularVelocity") or x:极A("BodyForce") or x:极A("BodyGyro") or 
-               x:极A("BodyPosition") or x:极A("BodyThrust") or x:极极("BodyVelocity") then
+            if x:IsA("BodyAngularVelocity") or x:IsA("BodyForce") or x:IsA("BodyGyro") or 
+               x:IsA("BodyPosition") or x:IsA("BodyThrust") or x:IsA("BodyVelocity") then
                 x:Destroy()
             end
         end
@@ -262,7 +260,7 @@ end
 
 Workspace.DescendantAdded:Connect(function(v)
     if anActivity and not isPlayerDead then
-        Process极(v)
+        ProcessPart(v)
     end
 end)
 
@@ -277,7 +275,7 @@ local function CleanupParts()
     end
     _G.processedParts = {}
 
-    if updateConnection then
+    if updateConnection 键，然后
         updateConnection:Disconnect()
         updateConnection = nil
     end
@@ -285,7 +283,7 @@ end
 
 local function UpdateAllPartsVelocity()
     -- 如果玩家死亡，停止所有移动
-    if isPlayerDead then
+    if isPlayerDead 键，然后
         for part, data in pairs(_G.processedParts) do
             if data.bodyVelocity and data.bodyVelocity.Parent then
                 data.bodyVelocity.Velocity = Vector3.new(0, 0, 0)
@@ -295,7 +293,7 @@ local function UpdateAllPartsVelocity()
     end
     
     local direction = CalculateMoveDirection()
-    for part, data in pairs(_G.processedParts) do
+    for part, data 在 pairs(_G.processedParts) do
         if data.bodyVelocity and data.bodyVelocity.Parent then
             data.bodyVelocity.Velocity = direction * _G.floatSpeed
         end
@@ -318,7 +316,7 @@ local function PreventRotation()
     _G.fixedMode = true
     -- 为所有已处理的零件添加BodyGyro
     for part, data in pairs(_G.processedParts) do
-        if data.bodyVelocity极 data.bodyVelocity.Parent then
+        if data.bodyVelocity 和 data.bodyVelocity.Parent 键，然后
             if not data.bodyGyro or not data.bodyGyro.Parent then
                 local bodyGyro = Instance.new("BodyGyro")
                 bodyGyro.Parent = part
@@ -363,43 +361,24 @@ local function MakeDraggable(gui)
 
     local dragHandle = Instance.new("Frame")
     dragHandle.Name = "DragHandle"
-    dragHandle.Size = UDim2.new(0, 20, 0, 20)
-    dragHandle.Position = UDim2.new(1, -20, 0, 0)
+    dragHandle.Size = UDim2.new(0， 20, 0, 20)
+    dragHandle.Position = UDim2.new(1, -20， 0, 0)
     dragHandle.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
     dragHandle.BorderSizePixel = 0
-    dragHandle.Parent = gu极
+    dragHandle.Parent = gui
 
     local gripIcon = Instance.new("TextLabel")
     gripIcon.Name = "GripIcon"
-    gripIcon.Size = UDim2.new(1, 0, 1极 0)
+    gripIcon.Size = UDim2.new(1, 0, 1, 0)
     gripIcon.Position = UDim2.new(0, 0, 0, 0)
     gripIcon.Text = "≡"
-    gripIcon.TextColor3 = Color3.new(1, 1, 1)
+    gripIcon.TextColor3 = Color3.new(1， 1, 1)
     gripIcon.BackgroundTransparency = 1
     gripIcon.TextSize = 14
     gripIcon.Parent = dragHandle
 
     dragHandle.Active = true
     dragHandle.Draggable = true
-end
-
--- 按钮点击效果函数 (修复颜色故障)
-local function ButtonClickEffect(button)
-    local originalColor = button.BackgroundColor3
-    local originalText = button.Text
-    
-    -- 使用TweenService创建平滑的颜色变化
-    local tweenInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(button, tweenInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 0)})
-    tween:Play()
-    
-    -- 恢复原色
-    delay(0.2, function()
-        if button and button.Parent then
-            local restoreTween = TweenService:Create(button, tweenInfo, {BackgroundColor3 = originalColor})
-            restoreTween:Play()
-        end
-    end)
 end
 
 -- 创建手机友好的GUI
@@ -413,22 +392,21 @@ local function CreateMobileGUI()
     -- 主开关按钮 - 移动到右上角
     local mainButton = Instance.new("TextButton")
     mainButton.Name = "MainToggle"
-    mainButton.Size = UDim2.new(0, 100, 0, 40) -- 缩小尺寸
-    mainButton.Position = UDim2.new(1, -110, 0, 10) -- 右上角位置
+    mainButton.Size = UDim2.new(0, 120, 0, 50)
+    mainButton.Position = UDim2.new(1, -130, 0, 10) -- 右上角位置
     mainButton.Text = "漂浮: 关闭"
-    mainButton.TextSize = 14 -- 减小字体
-    mainButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+    mainButton.TextSize = 16
+    mainButton.BackgroundColor3 = Color3.fromRGB(255， 0, 0)
     mainButton.TextColor3 = Color3.new(1, 1, 1)
     mainButton.Parent = screenGui
 
     MakeDraggable(mainButton)
-    GUIReferences.mainButton = mainButton
     print("主按钮创建完成")
 
-    -- 控制面板 (缩小尺寸)
+    -- 控制面板 - 减小尺寸
     local controlPanel = Instance.new("Frame")
     controlPanel.Name = "ControlPanel"
-    controlPanel.Size = UDim2.new(0, 250, 0, 400) -- 缩小尺寸
+    controlPanel.Size = UDim2.new(0, 250, 0, 400) -- 减小尺寸
     controlPanel.Position = UDim2.new(0.5, -125, 0.5, -200)
     controlPanel.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     controlPanel.BackgroundTransparency = 0.3
@@ -439,95 +417,105 @@ local function CreateMobileGUI()
     MakeDraggable(controlPanel)
     print("控制面板创建完成")
 
+    -- 添加滚动框架以容纳更多内容
+    local scrollFrame = Instance.new("ScrollingFrame")
+    scrollFrame.Name = "ScrollFrame"
+    scrollFrame.Size = UDim2.new(1, 0, 1, -50) -- 留出底部空间给关闭按钮
+    scrollFrame.Position = UDim2.new(0, 0, 0, 0)
+    scrollFrame.BackgroundTransparency = 1
+    scrollFrame.BorderSizePixel = 0
+    scrollFrame.CanvasSize = UDim2.new(0, 0, 0, 600) -- 可滚动内容高度
+    scrollFrame.ScrollBarThickness = 6
+    scrollFrame.Parent = controlPanel
+
     -- 速度控制
     local speedLabel = Instance.new("TextLabel")
-    speedLabel.Name极 "SpeedLabel"
-    speedLabel.Size = UDim2.new(1, 0, 0, 30) -- 缩小尺寸
+    speedLabel.Name = "SpeedLabel"
+    speedLabel.Size = UDim2.new(1, 0, 0, 30)
     speedLabel.Position = UDim2.new(0, 0, 0, 10)
     speedLabel.Text = "速度: " .. _G.floatSpeed
     speedLabel.TextColor3 = Color3.new(1, 1, 1)
     speedLabel.BackgroundTransparency = 1
-    speedLabel.TextSize = 16 -- 减小字体
-    speedLabel.Parent = controlPanel
+    speedLabel.TextSize = 18
+    speedLabel.Parent = scrollFrame
 
-    -- 速度增加按钮 (缩小尺寸)
+    -- 速度增加按钮
     local speedUpButton = Instance.new("TextButton")
     speedUpButton.Name = "SpeedUp"
-    speedUpButton.Size = UDim2.new(0, 50, 0, 50) -- 缩小尺寸
+    speedUpButton.Size = UDim2.new(0, 50, 0, 50) -- 减小按钮尺寸
     speedUpButton.Position = UDim2.new(0.7, 0, 0, 50)
     speedUpButton.Text = "+"
-    speed极Button.TextSize = 24 -- 减小字体
+    speedUpButton.TextSize = 25
     speedUpButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
     speedUpButton.TextColor3 = Color3.new(1, 1, 1)
-    speedUpButton.Parent = controlPanel
+    speedUpButton.Parent = scrollFrame
 
-    -- 速度减少按钮 (缩小尺寸)
+    -- 速度减少按钮
     local speedDownButton = Instance.new("TextButton")
     speedDownButton.Name = "SpeedDown"
-    speedDownButton.Size = UDim2.new(0, 50, 0, 50) -- 缩小尺寸
+    speedDownButton.Size = UDim2.new(0, 50, 0, 50) -- 减小按钮尺寸
     speedDownButton.Position = UDim2.new(0.3, 0, 0, 50)
     speedDownButton.Text = "-"
-    speedDownButton.TextSize = 24 -- 减小字体
+    speedDownButton.TextSize = 25
     speedDownButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
     speedDownButton.TextColor3 = Color3.new(1, 1, 1)
-    speedDownButton.Parent = controlPanel
+    speedDownButton.Parent = scrollFrame
 
-    -- 停止按钮 (缩小尺寸)
+    -- 停止按钮
     local stopButton = Instance.new("TextButton")
     stopButton.Name = "Stop"
-    stopButton.Size = UDim2.new(0, 80, 0, 30) -- 缩小尺寸
-    stopButton.Position = UDim2.new(0.5, -40, 0, 110)
+    stopButton.Size = UDim2.new(0, 100, 0, 35) -- 减小按钮尺寸
+    stopButton.Position = UDim2.new(0.5, -50, 0, 110)
     stopButton.Text = "停止移动"
-    stopButton.TextSize = 14 -- 减小字体
-    stopButton.BackgroundColor极 = Color3.fromRGB(200, 100, 100)
+    stopButton.TextSize = 14
+    stopButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
     stopButton.TextColor3 = Color3.new(1, 1, 1)
-    stopButton.Parent = controlPanel
+    stopButton.Parent = scrollFrame
 
-    -- 防止旋转按钮 (缩小尺寸)
+    -- 防止旋转按钮
     local fixButton = Instance.new("TextButton")
     fixButton.Name = "FixRotation"
-    fixButton.Size = UDim2.new(0, 100, 0, 30) -- 缩小尺寸
-    fixButton.Position = UDim2.new(0.5, -50, 0, 150)
+    fixButton.Size = UDim2.new(0, 120, 0, 35) -- 减小按钮尺寸
+    fixButton.Position = UDim2.new(0.5, -60, 0, 155)
     fixButton.Text = "防止旋转: 关闭"
-    fixButton.TextSize = 14 -- 减小字体
+    fixButton.TextSize = 14
     fixButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
     fixButton.TextColor3 = Color3.new(1, 1, 1)
-    fixButton.Parent = controlPanel
+    fixButton.Parent = scrollFrame
 
-    GUIReferences.fixButton = fixButton
     MakeDraggable(fixButton)
 
     -- 方向控制标题
     local directionLabel = Instance.new("TextLabel")
     directionLabel.Name = "DirectionLabel"
-    directionLabel.Size = UDim2.new(1, 0, 0, 30) -- 缩小尺寸
-    directionLabel.Position = UDim2.new(0, 0, 0, 190) -- 调整位置
+    directionLabel.Size = UDim2.new(1, 0, 0, 30)
+    directionLabel.Position = UDim2.new(0, 0, 0, 200)
     directionLabel.Text = "移动方向 (基于视角)"
     directionLabel.TextColor3 = Color3.new(1, 1, 1)
     directionLabel.BackgroundTransparency = 1
-    directionLabel.TextSize = 16 -- 减小字体
-    directionLabel.Parent = controlPanel
+    directionLabel.TextSize = 16
+    directionLabel.Parent = scrollFrame
 
-    -- 方向按钮网格 - 现在基于视角方向 (缩小尺寸)
+    -- 方向按钮网格 - 现在基于视角方向
     local directions = {
-        {name = "上", dir = "up", pos = UDim2.new(0.5, -25, 0, 230)}, -- 缩小尺寸
-        {name = "下", dir = "down", pos = UDim2.new(0.5, -25, 0, 290)}, -- 缩小尺寸
-        {name = "前", dir = "forward", pos = UDim2.new(0.2, -25, 0, 260)}, -- 缩小尺寸
-        {name = "后", dir = "back", pos = UDim2.new(0.8, -25, 0, 260)}, -- 缩小尺寸
-        {name = "左", dir = "left", pos = UDim2.new(0.05, -25, 0, 260)}, -- 缩小尺寸
-        {name = "右", dir = "right", pos = UDim2.new(0.95, -25, 0, 260)} -- 缩小尺寸
+        {name = "向上", dir = "up", pos = UDim2.new(0.5, -25, 0, 240)},
+        {name = "向下", dir = "down", pos = UDim2.new(0.5, -25, 0, 290)},
+        {name = "向前", dir = "forward", pos = UDim2.new(0.2, -25, 0, 265)},
+        {name = "向后", dir = "back", pos = UDim2.new(0.8, -25, 0, 265)},
+        {name = "向左", dir = "left", pos = UDim2.new(0.05, -25, 0, 265)},
+        {name = "向右", dir = "right", pos = UDim2.new(0.95, -25, 0, 265)}
     }
 
     for i, dirInfo in ipairs(directions) do
         local button = Instance.new("TextButton")
         button.Name = dirInfo.name
-        button.Size = UDim2.new(0, 50, 0, 50) -- 缩小尺寸
+        button.Size = UDim2.new(0, 50, 0, 40) -- 减小按钮尺寸
         button.Position = dirInfo.pos
         button.Text = dirInfo.name
-        button.TextSize = 14 -- 减小字体
+        button.TextSize = 12
         button.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
         button.TextColor3 = Color3.new(1, 1, 1)
-        button.Parent = controlPanel
+        button.Parent = scrollFrame
 
         button.MouseButton1Click:Connect(function()
             -- 如果玩家死亡，不允许更改方向
@@ -543,19 +531,22 @@ local function CreateMobileGUI()
             
             _G.moveDirectionType = dirInfo.dir
             UpdateAllPartsVelocity()
-            
-            -- 使用新的点击效果函数
-            ButtonClickEffect(button)
+
+            local originalColor = button.BackgroundColor3
+            button.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+            delay(0.2, function()
+                button.BackgroundColor3 = originalColor
+            end)
         end)
     end
 
-    -- 关闭面板按钮 (缩小尺寸)
+    -- 关闭面板按钮 (放在控制面板底部，不在滚动框架内)
     local closeButton = Instance.new("TextButton")
     closeButton.Name = "ClosePanel"
-    closeButton.Size = UDim2.new(0, 80, 0, 30) -- 缩小尺寸
-    closeButton.Position = UDim2.new(0.5, -40, 0, 350) -- 调整位置
+    closeButton.Size = UDim2.new(0, 100, 0, 35)
+    closeButton.Position = UDim2.new(0.5, -50, 1, -45)
     closeButton.Text = "关闭面板"
-    closeButton.TextSize = 14 -- 减小字体
+    closeButton.TextSize = 14
     closeButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
     closeButton.TextColor3 = Color3.new(1, 1, 1)
     closeButton.Parent = controlPanel
@@ -573,4 +564,180 @@ local function CreateMobileGUI()
             return
         end
         
-        _G.floatSpeed = math.clamp(_G.floatSpeed + 5, 1, 100) -- 最大速度增加到
+        _G.floatSpeed = math.clamp(_G.floatSpeed + 5, 1, 100) -- 最大速度增加到100
+        speedLabel.Text = "速度: " .. _G.floatSpeed
+        UpdateAllPartsVelocity()
+
+        local originalColor = speedUpButton.BackgroundColor3
+        speedUpButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+        delay(0.2, function()
+            speedUpButton.BackgroundColor3 = originalColor
+        end)
+    end)
+
+    -- 修复减速度按钮的bug
+    speedDownButton.MouseButton1Click:Connect(function()
+        -- 如果玩家死亡，不允许更改速度
+        if isPlayerDead then
+            local warningMsg = Instance.new("Message")
+            warningMsg.Text = "玩家死亡时无法更改漂浮速度"
+            warningMsg.Parent = Workspace
+            delay(2, function()
+                warningMsg:Destroy()
+            end)
+            return
+        end
+        
+        _G.floatSpeed = math.clamp(_G.floatSpeed - 5, 1, 100) -- 最大速度增加到100
+        speedLabel.Text = "速度: " .. _G.floatSpeed
+        UpdateAllPartsVelocity()
+
+        local originalColor = speedDownButton.BackgroundColor3
+        speedDownButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        delay(0.2, function()
+            speedDownButton.BackgroundColor3 = originalColor
+        end)
+    end)
+
+    -- 停止按钮功能
+    stopButton.MouseButton1Click:Connect(function()
+        -- 如果玩家死亡，不允许操作
+        if isPlayerDead then
+            local warningMsg = Instance.new("Message")
+            warningMsg.Text = "玩家死亡时无法操作漂浮功能"
+            warningMsg.Parent = Workspace
+            delay(2, function()
+                warningMsg:Destroy()
+            end)
+            return
+        end
+        
+        StopAllParts()
+        speedLabel.Text = "速度: " .. _G.floatSpeed
+
+        local originalColor = stopButton.BackgroundColor3
+        stopButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+        delay(0.2, function()
+            stopButton.BackgroundColor3 = originalColor
+        end)
+    end)
+
+    -- 防止旋转按钮功能
+    fixButton.MouseButton1Click:Connect(function()
+        -- 如果玩家死亡，不允许操作
+        if isPlayerDead then
+            local warningMsg = Instance.new("Message")
+            warningMsg.Text = "玩家死亡时无法操作防旋转功能"
+            warningMsg.Parent = Workspace
+            delay(2, function()
+                warningMsg:Destroy()
+            end)
+            return
+        end
+        
+        local newFixedState = ToggleRotationPrevention()
+        if newFixedState then
+            fixButton.Text = "防止旋转: 开启"
+            fixButton.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+            print("防旋转模式已开启")
+        else
+            fixButton.Text = "防止旋转: 关闭"
+            fixButton.BackgroundColor3 = Color3.fromRGB(200, 100, 100)
+            print("防旋转模式已关闭")
+        end
+    end)
+
+    -- 打开面板按钮 - 移动到右上角，在主按钮下方
+    local openPanelButton = Instance.new("TextButton")
+    openPanelButton.Name = "OpenPanel"
+    openPanelButton.Size = UDim2.new(0, 120, 0, 35) -- 减小按钮尺寸
+    openPanelButton.Position = UDim2.new(1, -130, 0, 70) -- 右上角位置，在主按钮下方
+    openPanelButton.Text = "打开控制面板"
+    openPanelButton.TextSize = 14
+    openPanelButton.BackgroundColor3 = Color3.fromRGB(100, 100, 200)
+    openPanelButton.TextColor3 = Color3.new(1, 1, 1)
+    openPanelButton.Visible = true  -- 初始状态为可见
+    openPanelButton.Parent = screenGui
+
+    MakeDraggable(openPanelButton)
+
+    -- 主开关功能
+    mainButton.MouseButton1Click:Connect(function()
+        -- 如果玩家死亡，不允许开启漂浮
+        if isPlayerDead then
+            local warningMsg = Instance.new("Message")
+            warningMsg.Text = "玩家死亡时无法开启漂浮功能"
+            warningMsg.Parent = Workspace
+            delay(2, function()
+                warningMsg:Destroy()
+            end)
+            return
+        end
+        
+        anActivity = not anActivity
+        ProcessAllParts()
+        if anActivity then
+            mainButton.Text = "漂浮: 开启"
+            mainButton.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+            UpdateAllPartsVelocity()
+            print("漂浮功能已开启")
+        else
+            CleanupParts()
+            mainButton.Text = "漂浮: 关闭"
+            mainButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            print("漂浮功能已关闭")
+        end
+    end)
+
+    -- 关闭面板功能
+    closeButton.MouseButton1Click:Connect(function()
+        controlPanel.Visible = false
+        openPanelButton.Visible = true
+        print("控制面板已关闭")
+    end)
+
+    -- 打开面板功能
+    openPanelButton.MouseButton1Click:Connect(function()
+        controlPanel.Visible = true
+        openPanelButton.Visible = false
+        print("控制面板已打开")
+    end)
+    
+    -- 监听漂浮状态变化事件
+    _G.FloatingStateChanged.Event:Connect(function(stateInfo)
+        if stateInfo.state == "disabled" and stateInfo.reason == "player_died" then
+            -- 更新主按钮状态
+            mainButton.Text = "漂浮: 关闭"
+            mainButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+            
+            -- 如果控制面板是打开的，也更新其中的状态显示
+            if controlPanel.Visible then
+                -- 这里可以添加控制面板内其他元素的更新逻辑
+            end
+        end
+    end)
+
+    print("GUI创建完成")
+    return screenGui
+end
+
+-- 添加错误处理
+local success, err = pcall(function()
+    CreateMobileGUI()
+    -- 设置死亡检测
+    setupDeathDetection()
+end)
+
+if not success then
+    warn("GUI创建失败: " .. tostring(err))
+
+    -- 显示错误信息
+    local errorMsg = Instance.new("Message")
+    errorMsg.Text = "漂浮控制GUI初始化失败: " .. tostring(err)
+    errorMsg.Parent = Workspace
+    delay(5, function()
+        errorMsg:Destroy()
+    end)
+end
+
+print("全局物体漂浮脚本已加载成功!")

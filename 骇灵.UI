@@ -1,0 +1,3274 @@
+repeat
+    task.wait()
+until game:IsLoaded()
+local library = {}
+local ToggleUI = false
+library.currentTab = nil
+library.flags = {}
+library.configs = {}
+library.currentConfig = "默认配置"
+library.uiPosition = UDim2.new(0.5, 0, 0.5, 0)
+
+library.uiSettings = {
+    mainColor = Color3.fromRGB(0, 0, 0),
+    backgroundColor = Color3.fromRGB(0, 0, 0),
+    backgroundColorTransparency = 0.5,
+    controlColor = Color3.fromRGB(30, 30, 30),
+    controlTransparency = 0.3,
+    textColor = Color3.fromRGB(255, 255, 255),
+    placeholderColor = Color3.fromRGB(180, 180, 180),
+    disabledTextColor = Color3.fromRGB(150, 150, 150),
+    uiSize = 1.0,
+    backgroundImage = "",
+    minimizeShape = "Square",
+    minimizeImage = "",
+    minimizeSize = UDim2.new(0, 61, 0, 32),
+    cornerRadius = 6,
+    buttonCornerRadius = 6,
+    sectionCornerRadius = 6,
+    sliderCornerRadius = 4,
+    dropdownCornerRadius = 6,
+    titleTextSize = 16,
+    buttonTextSize = 16,
+    labelTextSize = 14,
+    sectionTextSize = 16,
+    tabTextSize = 14,
+    sliderValueTextSize = 14,
+    dropdownTextSize = 16,
+    textboxTextSize = 14,
+    tabIcon = "5436396975",
+    buttonIcon = "",
+    toggleOnIcon = "",
+    toggleOffIcon = "",
+    dropdownIcon = "",
+    sliderIcon = "",
+    textboxIcon = "",
+    sectionExpandIcon = "6031302934",
+    sectionCollapseIcon = "6031302932",
+    iconSize = 24,
+    iconColor = Color3.fromRGB(255, 255, 255),
+    iconTransparency = 0,
+    theme = "Default",
+    layout = "Default",
+    animationStyle = "Default",
+    startupAnimation = "FadeIn",
+    startupAnimationDuration = 1.0,
+    startupAnimationEasing = "Linear",
+    buttonAnimation = "Ripple",
+    toggleAnimation = "Slide",
+    sliderAnimation = "Smooth",
+    dropdownAnimation = "Fade",
+    blurBackground = false,
+    blurIntensity = 10,
+    shadowIntensity = 0.5,
+    glowEffect = false,
+    glowColor = Color3.fromRGB(0, 150, 255),
+    parallaxEffect = false,
+    tabPosition = "Left",
+    sectionSpacing = 4,
+    elementSpacing = 2,
+    accentColor = Color3.fromRGB(0, 150, 255),
+    successColor = Color3.fromRGB(76, 175, 80),
+    warningColor = Color3.fromRGB(255, 152, 0),
+    errorColor = Color3.fromRGB(244, 67, 54),
+    infoColor = Color3.fromRGB(33, 150, 243)
+}
+
+library.themes = {
+    Default = {
+        mainColor = Color3.fromRGB(0, 0, 0),
+        backgroundColor = Color3.fromRGB(0, 0, 0),
+        controlColor = Color3.fromRGB(30, 30, 30),
+        textColor = Color3.fromRGB(255, 255, 255),
+        accentColor = Color3.fromRGB(0, 150, 255)
+    },
+    Dark = {
+        mainColor = Color3.fromRGB(18, 18, 18),
+        backgroundColor = Color3.fromRGB(25, 25, 25),
+        controlColor = Color3.fromRGB(45, 45, 45),
+        textColor = Color3.fromRGB(240, 240, 240),
+        accentColor = Color3.fromRGB(0, 150, 255)
+    },
+    Light = {
+        mainColor = Color3.fromRGB(245, 245, 245),
+        backgroundColor = Color3.fromRGB(255, 255, 255),
+        controlColor = Color3.fromRGB(235, 235, 235),
+        textColor = Color3.fromRGB(30, 30, 30),
+        accentColor = Color3.fromRGB(33, 150, 243)
+    },
+    Cyberpunk = {
+        mainColor = Color3.fromRGB(10, 10, 40),
+        backgroundColor = Color3.fromRGB(20, 20, 60),
+        controlColor = Color3.fromRGB(40, 40, 80),
+        textColor = Color3.fromRGB(0, 255, 255),
+        accentColor = Color3.fromRGB(255, 0, 255)
+    },
+    Material = {
+        mainColor = Color3.fromRGB(33, 33, 33),
+        backgroundColor = Color3.fromRGB(48, 48, 48),
+        controlColor = Color3.fromRGB(66, 66, 66),
+        textColor = Color3.fromRGB(255, 255, 255),
+        accentColor = Color3.fromRGB(0, 150, 255)
+    },
+    Gradient = {
+        mainColor = Color3.fromRGB(30, 30, 30),
+        backgroundColor = Color3.fromRGB(20, 20, 20),
+        controlColor = Color3.fromRGB(40, 40, 40),
+        textColor = Color3.fromRGB(255, 255, 255),
+        accentColor = Color3.fromRGB(0, 150, 255)
+    }
+}
+
+library.layouts = {
+    Default = {
+        tabPosition = "Left",
+        sectionSpacing = 4,
+        elementSpacing = 2
+    },
+    Compact = {
+        tabPosition = "Left",
+        sectionSpacing = 2,
+        elementSpacing = 1
+    },
+    Modern = {
+        tabPosition = "Top",
+        sectionSpacing = 6,
+        elementSpacing = 3
+    },
+    Minimal = {
+        tabPosition = "Left",
+        sectionSpacing = 8,
+        elementSpacing = 4
+    }
+}
+
+library.animations = {
+    Default = {
+        startupAnimation = "FadeIn",
+        buttonAnimation = "Ripple",
+        toggleAnimation = "Slide",
+        sliderAnimation = "Smooth",
+        dropdownAnimation = "Fade"
+    },
+    Smooth = {
+        startupAnimation = "SlideIn",
+        buttonAnimation = "Scale",
+        toggleAnimation = "Fade",
+        sliderAnimation = "Smooth",
+        dropdownAnimation = "Slide"
+    },
+    Bounce = {
+        startupAnimation = "BounceIn",
+        buttonAnimation = "Bounce",
+        toggleAnimation = "Bounce",
+        sliderAnimation = "Bounce",
+        dropdownAnimation = "Bounce"
+    },
+    Elegant = {
+        startupAnimation = "FadeIn",
+        buttonAnimation = "Ripple",
+        toggleAnimation = "Scale",
+        sliderAnimation = "Smooth",
+        dropdownAnimation = "Fade"
+    }
+}
+
+library.animationSystem = {
+    startupAnimations = {
+        FadeIn = function(main)
+            main.Visible = true
+            main.BackgroundTransparency = 1
+            Tween(main, {0.5, "Sine", "Out"}, {BackgroundTransparency = library.uiSettings.backgroundColorTransparency})
+        end,
+        SlideIn = function(main)
+            main.Visible = true
+            main.Position = UDim2.new(0.5, 0, -1, 0)
+            Tween(main, {0.6, "Back", "Out"}, {Position = UDim2.new(0.5, 0, 0.5, 0)})
+        end,
+        ZoomIn = function(main)
+            main.Visible = true
+            main.Size = UDim2.new(0, 0, 0, 0)
+            Tween(main, {0.5, "Back", "Out"}, {Size = UDim2.new(0, 572 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)})
+        end,
+        BounceIn = function(main)
+            main.Visible = true
+            main.Size = UDim2.new(0, 0, 0, 0)
+            Tween(main, {0.8, "Bounce", "Out"}, {Size = UDim2.new(0, 572 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)})
+        end,
+        FlipIn = function(main)
+            main.Visible = true
+            main.Rotation = -180
+            Tween(main, {0.7, "Back", "Out"}, {Rotation = 0})
+        end,
+        WaveIn = function(main)
+            main.Visible = true
+            main.Position = UDim2.new(1.5, 0, 0.5, 0)
+            Tween(main, {0.8, "Elastic", "Out"}, {Position = UDim2.new(0.5, 0, 0.5, 0)})
+        end,
+        SpinIn = function(main)
+            main.Visible = true
+            main.Rotation = 360
+            main.Size = UDim2.new(0, 0, 0, 0)
+            Tween(main, {0.7, "Back", "Out"}, {Rotation = 0, Size = UDim2.new(0, 572 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)})
+        end
+    },
+    buttonAnimations = {
+        Ripple = function(button)
+            Ripple(button)
+        end,
+        Scale = function(button)
+            Tween(button, {0.1, "Sine", "Out"}, {Size = button.Size - UDim2.new(0, 4, 0, 4)})
+            Tween(button, {0.1, "Sine", "Out"}, {Size = button.Size}, 0.1)
+        end,
+        Bounce = function(button)
+            Tween(button, {0.1, "Sine", "Out"}, {Size = button.Size - UDim2.new(0, 6, 0, 6)})
+            Tween(button, {0.2, "Bounce", "Out"}, {Size = button.Size}, 0.1)
+        end,
+        Glow = function(button)
+            local glow = Instance.new("Frame")
+            glow.Name = "ButtonGlow"
+            glow.BackgroundColor3 = library.uiSettings.accentColor
+            glow.BackgroundTransparency = 0.7
+            glow.Size = UDim2.new(1, 0, 1, 0)
+            glow.Position = UDim2.new(0, 0, 0, 0)
+            glow.ZIndex = button.ZIndex - 1
+            glow.Parent = button
+            local corner = Instance.new("UICorner")
+            corner.CornerRadius = button:FindFirstChildOfClass("UICorner").CornerRadius
+            corner.Parent = glow
+            Tween(glow, {0.3, "Sine", "Out"}, {BackgroundTransparency = 1, Size = glow.Size + UDim2.new(0, 10, 0, 10), Position = UDim2.new(0, -5, 0, -5)})
+            spawn(function()
+                wait(0.3)
+                glow:Destroy()
+            end)
+        end,
+        Shake = function(button)
+            local originalPosition = button.Position
+            Tween(button, {0.05, "Sine", "Out"}, {Position = originalPosition + UDim2.new(0, 3, 0, 0)})
+            Tween(button, {0.05, "Sine", "Out"}, {Position = originalPosition + UDim2.new(0, -3, 0, 0)}, 0.05)
+            Tween(button, {0.05, "Sine", "Out"}, {Position = originalPosition}, 0.1)
+        end,
+        Pulse = function(button)
+            Tween(button, {0.2, "Sine", "Out"}, {BackgroundTransparency = library.uiSettings.controlTransparency - 0.2})
+            Tween(button, {0.2, "Sine", "Out"}, {BackgroundTransparency = library.uiSettings.controlTransparency}, 0.2)
+        end
+    },
+    toggleAnimations = {
+        Slide = function(toggleSwitch, state)
+            Tween(toggleSwitch, {0.2, "Sine", "Out"}, {
+                Position = UDim2.new(0, (state and toggleSwitch.Size.X.Offset / 2 or 0), 0, 0),
+                BackgroundColor3 = (state and library.uiSettings.accentColor or Color3.fromRGB(150, 150, 150))
+            })
+        end,
+        Fade = function(toggleSwitch, state)
+            toggleSwitch.BackgroundTransparency = 1
+            toggleSwitch.BackgroundColor3 = state and library.uiSettings.accentColor or Color3.fromRGB(150, 150, 150)
+            Tween(toggleSwitch, {0.3, "Sine", "Out"}, {BackgroundTransparency = 0})
+        end,
+        Scale = function(toggleSwitch, state)
+            toggleSwitch.Size = UDim2.new(0, 0, 0, toggleSwitch.Size.Y.Offset)
+            toggleSwitch.BackgroundColor3 = state and library.uiSettings.accentColor or Color3.fromRGB(150, 150, 150)
+            Tween(toggleSwitch, {0.2, "Back", "Out"}, {Size = UDim2.new(0, 24 * library.uiSettings.uiSize, 0, toggleSwitch.Size.Y.Offset)})
+        end,
+        Bounce = function(toggleSwitch, state)
+            Tween(toggleSwitch, {0.2, "Bounce", "Out"}, {
+                Position = UDim2.new(0, (state and toggleSwitch.Size.X.Offset / 2 or 0), 0, 0),
+                BackgroundColor3 = (state and library.uiSettings.accentColor or Color3.fromRGB(150, 150, 150))
+            })
+        end,
+        Rotate = function(toggleSwitch, state)
+            toggleSwitch.Rotation = state and 180 or 0
+            Tween(toggleSwitch, {0.3, "Back", "Out"}, {
+                Position = UDim2.new(0, (state and toggleSwitch.Size.X.Offset / 2 or 0), 0, 0),
+                Rotation = 0,
+                BackgroundColor3 = (state and library.uiSettings.accentColor or Color3.fromRGB(150, 150, 150))
+            })
+        end
+    }
+}
+
+function library:ApplyTheme(themeName)
+    if self.themes[themeName] then
+        local theme = self.themes[themeName]
+        for key, value in pairs(theme) do
+            self.uiSettings[key] = value
+        end
+        self.uiSettings.theme = themeName
+        self:UpdateUIStyle()
+        return true
+    end
+    return false
+end
+
+function library:ApplyLayout(layoutName)
+    if self.layouts[layoutName] then
+        local layout = self.layouts[layoutName]
+        for key, value in pairs(layout) do
+            self.uiSettings[key] = value
+        end
+        self.uiSettings.layout = layoutName
+        self:UpdateUIStyle()
+        return true
+    end
+    return false
+end
+
+function library:ApplyAnimationStyle(styleName)
+    if self.animations[styleName] then
+        local animations = self.animations[styleName]
+        for key, value in pairs(animations) do
+            self.uiSettings[key] = value
+        end
+        self.uiSettings.animationStyle = styleName
+        return true
+    end
+    return false
+end
+
+function library:PlayStartupAnimation()
+    local animationName = self.uiSettings.startupAnimation
+    local animation = self.animationSystem.startupAnimations[animationName]
+    if animation then
+        animation(self.uiElements.Main)
+    else
+        self.uiElements.Main.Visible = true
+    end
+end
+
+function library:PlayButtonAnimation(button)
+    local animationName = self.uiSettings.buttonAnimation
+    local animation = self.animationSystem.buttonAnimations[animationName]
+    if animation then
+        animation(button)
+    else
+        Ripple(button)
+    end
+end
+
+function library:PlayToggleAnimation(toggleSwitch, state)
+    local animationName = self.uiSettings.toggleAnimation
+    local animation = self.animationSystem.toggleAnimations[animationName]
+    if animation then
+        animation(toggleSwitch, state)
+    else
+        Tween(toggleSwitch, {0.2, "Sine", "Out"}, {
+            Position = UDim2.new(0, (state and toggleSwitch.Size.X.Offset / 2 or 0), 0, 0)
+        })
+    end
+end
+
+function library:SaveUIPosition()
+    library.uiPosition = self.uiElements.Main.Position
+    return true, "UI位置已保存"
+end
+
+function library:RestoreUIPosition()
+    self.uiElements.Main.Position = library.uiPosition
+    return true, "UI位置已恢复"
+end
+
+function library:ApplyCurrentLayout()
+    local layout = self.uiSettings.layout
+    local main = self.uiElements.Main
+    if layout == "Modern" then
+        main.Size = UDim2.new(0, 600 * self.uiSettings.uiSize, 0, 400 * self.uiSettings.uiSize)
+    elseif layout == "Minimal" then
+        main.Size = UDim2.new(0, 500 * self.uiSettings.uiSize, 0, 350 * self.uiSettings.uiSize)
+    else
+        main.Size = UDim2.new(0, 572 * self.uiSettings.uiSize, 0, 353 * self.uiSettings.uiSize)
+    end
+end
+
+local function SaveConfig(name)
+    if not name or name == "" then
+        name = library.currentConfig
+    end
+
+    local serializedUISettings = {}
+    for setting, value in pairs(library.uiSettings) do
+        if typeof(value) == "UDim2" then
+            serializedUISettings[setting] = {
+                _type = "UDim2",
+                X = {Scale = value.X.Scale, Offset = value.X.Offset},
+                Y = {Scale = value.Y.Scale, Offset = value.Y.Offset}
+            }
+        elseif typeof(value) == "Color3" then
+            serializedUISettings[setting] = {
+                _type = "Color3",
+                R = value.R,
+                G = value.G,
+                B = value.B
+            }
+        else
+            serializedUISettings[setting] = value
+        end
+    end
+
+    local iconSettings = {
+        tabIcon = library.uiSettings.tabIcon or "5436396975",
+        buttonIcon = library.uiSettings.buttonIcon or "",
+        toggleOnIcon = library.uiSettings.toggleOnIcon or "",
+        toggleOffIcon = library.uiSettings.toggleOffIcon or "",
+        dropdownIcon = library.uiSettings.dropdownIcon or "",
+        sliderIcon = library.uiSettings.sliderIcon or "",
+        textboxIcon = library.uiSettings.textboxIcon or "",
+        sectionExpandIcon = library.uiSettings.sectionExpandIcon or "6031302934",
+        sectionCollapseIcon = library.uiSettings.sectionCollapseIcon or "6031302932",
+        iconSize = library.uiSettings.iconSize or 24,
+        iconColor = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255),
+        iconTransparency = library.uiSettings.iconTransparency or 0
+    }
+    
+    for k, v in pairs(iconSettings) do
+        if typeof(v) == "Color3" then
+            serializedUISettings[k] = {
+                _type = "Color3",
+                R = v.R,
+                G = v.G,
+                B = v.B
+            }
+        else
+            serializedUISettings[k] = v
+        end
+    end
+
+    local themeSettings = {
+        theme = library.uiSettings.theme or "Default",
+        layout = library.uiSettings.layout or "Default",
+        animationStyle = library.uiSettings.animationStyle or "Default",
+        startupAnimation = library.uiSettings.startupAnimation or "FadeIn",
+        buttonAnimation = library.uiSettings.buttonAnimation or "Ripple",
+        toggleAnimation = library.uiSettings.toggleAnimation or "Slide",
+        sliderAnimation = library.uiSettings.sliderAnimation or "Smooth",
+        dropdownAnimation = library.uiSettings.dropdownAnimation or "Fade",
+        blurBackground = library.uiSettings.blurBackground or false,
+        blurIntensity = library.uiSettings.blurIntensity or 10,
+        glowEffect = library.uiSettings.glowEffect or false,
+        glowColor = library.uiSettings.glowColor or Color3.fromRGB(0, 150, 255),
+        accentColor = library.uiSettings.accentColor or Color3.fromRGB(0, 150, 255)
+    }
+    
+    for k, v in pairs(themeSettings) do
+        if typeof(v) == "Color3" then
+            serializedUISettings[k] = {
+                _type = "Color3",
+                R = v.R,
+                G = v.G,
+                B = v.B
+            }
+        else
+            serializedUISettings[k] = v
+        end
+    end
+
+    local data = {
+        uiSettings = serializedUISettings,
+        uiPosition = {
+            _type = "UDim2",
+            X = {Scale = library.uiPosition.X.Scale, Offset = library.uiPosition.X.Offset},
+            Y = {Scale = library.uiPosition.Y.Scale, Offset = library.uiPosition.Y.Offset}
+        },
+        configName = name,
+        saveTime = os.time(),
+        version = "2.0"
+    }
+
+    library.configs[name] = data
+
+    if writefile then
+        local success, result = pcall(function()
+            writefile("BlackHoleUI_" .. name .. ".json", game:GetService("HttpService"):JSONEncode(data))
+        end)
+        if success then
+            return true, "配置保存成功: " .. name
+        else
+            return false, "保存失败: " .. tostring(result)
+        end
+    end
+
+    return true, "配置已保存到内存: " .. name
+end
+
+local function LoadConfig(name)
+    if not library.configs[name] then
+        if readfile and isfile then
+            local filename = "BlackHoleUI_" .. name .. ".json"
+            if isfile(filename) then
+                local success, result = pcall(function()
+                    local data = game:GetService("HttpService"):JSONDecode(readfile(filename))
+                    library.configs[name] = data
+                end)
+                if not success then
+                    return false, "加载失败: " .. tostring(result)
+                end
+            else
+                return false, "配置不存在: " .. name
+            end
+        else
+            return false, "配置不存在: " .. name
+        end
+    end
+
+    local config = library.configs[name]
+    library.currentConfig = name
+
+    if config.uiSettings then
+        for setting, value in pairs(config.uiSettings) do
+            if type(value) == "table" and value._type == "UDim2" then
+                library.uiSettings[setting] = UDim2.new(value.X.Scale, value.X.Offset, value.Y.Scale, value.Y.Offset)
+            elseif type(value) == "table" and value._type == "Color3" then
+                library.uiSettings[setting] = Color3.new(value.R, value.G, value.B)
+            else
+                library.uiSettings[setting] = value
+            end
+        end
+        
+        library.uiSettings.tabIcon = library.uiSettings.tabIcon or "5436396975"
+        library.uiSettings.buttonIcon = library.uiSettings.buttonIcon or ""
+        library.uiSettings.toggleOnIcon = library.uiSettings.toggleOnIcon or ""
+        library.uiSettings.toggleOffIcon = library.uiSettings.toggleOffIcon or ""
+        library.uiSettings.dropdownIcon = library.uiSettings.dropdownIcon or ""
+        library.uiSettings.sliderIcon = library.uiSettings.sliderIcon or ""
+        library.uiSettings.textboxIcon = library.uiSettings.textboxIcon or ""
+        library.uiSettings.sectionExpandIcon = library.uiSettings.sectionExpandIcon or "6031302934"
+        library.uiSettings.sectionCollapseIcon = library.uiSettings.sectionCollapseIcon or "6031302932"
+        library.uiSettings.iconSize = library.uiSettings.iconSize or 24
+        library.uiSettings.iconColor = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+        library.uiSettings.iconTransparency = library.uiSettings.iconTransparency or 0
+        
+        if library.UpdateUIStyle then
+            library:UpdateUIStyle()
+        end
+    end
+
+    if config.uiPosition then
+        library.uiPosition = UDim2.new(
+            config.uiPosition.X.Scale, config.uiPosition.X.Offset,
+            config.uiPosition.Y.Scale, config.uiPosition.Y.Offset
+        )
+        if library.uiElements and library.uiElements.Main then
+            library.uiElements.Main.Position = library.uiPosition
+        end
+    end
+
+    return true, "配置加载成功: " .. name
+end
+
+local function DeleteConfig(name)
+    if library.configs[name] then
+        library.configs[name] = nil
+
+        if delfile and isfile then
+            local filename = "BlackHoleUI_" .. name .. ".json"
+            if isfile(filename) then
+                delfile(filename)
+            end
+        end
+
+        return true, "配置已删除: " .. name
+    end
+    return false, "配置不存在: " .. name
+end
+
+local function GetConfigList()
+    local configs = {}
+
+    for name, _ in pairs(library.configs) do
+        table.insert(configs, name)
+    end
+
+    if listfiles and isfolder then
+        pcall(
+            function()
+                local files = listfiles("")
+                for _, file in pairs(files) do
+                    if file:find("BlackHoleUI_") and file:find(".json") then
+                        local name = file:match("BlackHoleUI_(.+)%.json")
+                        if name and not library.configs[name] then
+                            table.insert(configs, name)
+                        end
+                    end
+                end
+            end
+        )
+    end
+
+    table.sort(configs)
+    return configs
+end
+
+local function CopyConfigData()
+    local serializedUISettings = {}
+    for setting, value in pairs(library.uiSettings) do
+        if typeof(value) == "UDim2" then
+            serializedUISettings[setting] = {
+                _type = "UDim2",
+                X = {Scale = value.X.Scale, Offset = value.X.Offset},
+                Y = {Scale = value.Y.Scale, Offset = value.Y.Offset}
+            }
+        elseif typeof(value) == "Color3" then
+            serializedUISettings[setting] = {
+                _type = "Color3",
+                R = value.R,
+                G = value.G,
+                B = value.B
+            }
+        else
+            serializedUISettings[setting] = value
+        end
+    end
+
+    local iconSettings = {
+        tabIcon = library.uiSettings.tabIcon or "5436396975",
+        buttonIcon = library.uiSettings.buttonIcon or "",
+        toggleOnIcon = library.uiSettings.toggleOnIcon or "",
+        toggleOffIcon = library.uiSettings.toggleOffIcon or "",
+        dropdownIcon = library.uiSettings.dropdownIcon or "",
+        sliderIcon = library.uiSettings.sliderIcon or "",
+        textboxIcon = library.uiSettings.textboxIcon or "",
+        sectionExpandIcon = library.uiSettings.sectionExpandIcon or "6031302934",
+        sectionCollapseIcon = library.uiSettings.sectionCollapseIcon or "6031302932",
+        iconSize = library.uiSettings.iconSize or 24,
+        iconColor = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255),
+        iconTransparency = library.uiSettings.iconTransparency or 0
+    }
+    
+    for k, v in pairs(iconSettings) do
+        if typeof(v) == "Color3" then
+            serializedUISettings[k] = {
+                _type = "Color3",
+                R = v.R,
+                G = v.G,
+                B = v.B
+            }
+        else
+            serializedUISettings[k] = v
+        end
+    end
+
+    local configData = {
+        uiSettings = serializedUISettings,
+        uiPosition = {
+            _type = "UDim2",
+            X = {Scale = library.uiPosition.X.Scale, Offset = library.uiPosition.X.Offset},
+            Y = {Scale = library.uiPosition.Y.Scale, Offset = library.uiPosition.Y.Offset}
+        },
+        configName = library.currentConfig,
+        exportTime = os.date("%Y-%m-%d %H:%M:%S")
+    }
+
+    local jsonData = game:GetService("HttpService"):JSONEncode(configData)
+
+    if setclipboard then
+        setclipboard(jsonData)
+        return true, "配置数据已复制到剪贴板"
+    else
+        return false, "无法访问剪贴板"
+    end
+end
+
+local function UpdateConfigFromData(jsonData)
+    local success, configData = pcall(function()
+        return game:GetService("HttpService"):JSONDecode(jsonData)
+    end)
+
+    if not success then
+        return false, "JSON数据格式错误"
+    end
+
+    if configData.uiSettings then
+        for setting, value in pairs(configData.uiSettings) do
+            if type(value) == "table" and value._type == "UDim2" then
+                library.uiSettings[setting] = UDim2.new(value.X.Scale, value.X.Offset, value.Y.Scale, value.Y.Offset)
+            elseif type(value) == "table" and value._type == "Color3" then
+                library.uiSettings[setting] = Color3.new(value.R, value.G, value.B)
+            else
+                library.uiSettings[setting] = value
+            end
+        end
+        
+        library.uiSettings.tabIcon = library.uiSettings.tabIcon or "5436396975"
+        library.uiSettings.buttonIcon = library.uiSettings.buttonIcon or ""
+        library.uiSettings.toggleOnIcon = library.uiSettings.toggleOnIcon or ""
+        library.uiSettings.toggleOffIcon = library.uiSettings.toggleOffIcon or ""
+        library.uiSettings.dropdownIcon = library.uiSettings.dropdownIcon or ""
+        library.uiSettings.sliderIcon = library.uiSettings.sliderIcon or ""
+        library.uiSettings.textboxIcon = library.uiSettings.textboxIcon or ""
+        library.uiSettings.sectionExpandIcon = library.uiSettings.sectionExpandIcon or "6031302934"
+        library.uiSettings.sectionCollapseIcon = library.uiSettings.sectionCollapseIcon or "6031302932"
+        library.uiSettings.iconSize = library.uiSettings.iconSize or 24
+        library.uiSettings.iconColor = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+        library.uiSettings.iconTransparency = library.uiSettings.iconTransparency or 0
+    end
+
+    if configData.uiPosition then
+        library.uiPosition = UDim2.new(
+            configData.uiPosition.X.Scale, configData.uiPosition.X.Offset,
+            configData.uiPosition.Y.Scale, configData.uiPosition.Y.Offset
+        )
+        if library.uiElements and library.uiElements.Main then
+            library.uiElements.Main.Position = library.uiPosition
+        end
+    end
+
+    if library.UpdateUIStyle then
+        library:UpdateUIStyle()
+    end
+
+    SaveConfig(library.currentConfig)
+
+    return true, "配置数据更新成功"
+end
+
+local function GetLatestConfig()
+    local configs = GetConfigList()
+    local latestTime = 0
+    local latestConfig = nil
+    
+    for _, name in ipairs(configs) do
+        local configData
+        if library.configs[name] then
+            configData = library.configs[name]
+        else
+            local filename = "BlackHoleUI_" .. name .. ".json"
+            if readfile and isfile and isfile(filename) then
+                local success, result = pcall(function()
+                    return game:GetService("HttpService"):JSONDecode(readfile(filename))
+                end)
+                if success then
+                    configData = result
+                end
+            end
+        end
+        
+        if configData and configData.saveTime and configData.saveTime > latestTime then
+            latestTime = configData.saveTime
+            latestConfig = name
+        end
+    end
+    
+    return latestConfig
+end
+
+local function MigrateConfig(configData)
+    if not configData.version then
+        configData.version = "2.0"
+        if configData.uiSettings then
+            configData.uiSettings.theme = configData.uiSettings.theme or "Default"
+            configData.uiSettings.layout = configData.uiSettings.layout or "Default"
+            configData.uiSettings.animationStyle = configData.uiSettings.animationStyle or "Default"
+            configData.uiSettings.startupAnimation = configData.uiSettings.startupAnimation or "FadeIn"
+            configData.uiSettings.accentColor = configData.uiSettings.accentColor or {_type = "Color3", R = 0, G = 150/255, B = 1}
+        end
+        if not configData.uiPosition then
+            configData.uiPosition = {
+                _type = "UDim2",
+                X = {Scale = 0.5, Offset = 0},
+                Y = {Scale = 0.5, Offset = 0}
+            }
+        end
+    end
+    return configData
+end
+local services = setmetatable({}, {
+    __index = function(t, k)
+        return game.GetService(game, k)
+    end
+})
+local mouse = services.Players.LocalPlayer:GetMouse()
+
+function Tween(obj, t, data)
+    services.TweenService:Create(obj, TweenInfo.new(t[1], Enum.EasingStyle[t[2]], Enum.EasingDirection[t[3]]), data):Play()
+    return true
+end
+
+function Ripple(obj)
+    spawn(function()
+        if obj.ClipsDescendants ~= true then
+            obj.ClipsDescendants = true
+        end
+        local Ripple = Instance.new("ImageLabel")
+        Ripple.Name = "Ripple"
+        Ripple.Parent = obj
+        Ripple.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Ripple.BackgroundTransparency = 1.000
+        Ripple.ZIndex = 8
+        Ripple.Image = "rbxassetid://2708891598"
+        Ripple.ImageTransparency = 0.800
+        Ripple.ScaleType = Enum.ScaleType.Fit
+        Ripple.ImageColor3 = Color3.fromRGB(255, 255, 255)
+        Ripple.Position = UDim2.new((mouse.X - Ripple.AbsolutePosition.X) / obj.AbsoluteSize.X, 0, (mouse.Y - Ripple.AbsolutePosition.Y) / obj.AbsoluteSize.Y, 0)
+        Tween(Ripple, {0.3, "Linear", "InOut"}, {Position = UDim2.new(-5.5, 0, -5.5, 0), Size = UDim2.new(12, 0, 12, 0)})
+        wait(0.15)
+        Tween(Ripple, {0.3, "Linear", "InOut"}, {ImageTransparency = 1})
+        wait(0.3)
+        Ripple:Destroy()
+    end)
+end
+
+local toggled = false
+local switchingTabs = false
+
+function switchTab(new)
+    if switchingTabs then
+        return
+    end
+    local old = library.currentTab
+    if old == nil then
+        new[2].Visible = true
+        library.currentTab = new
+        services.TweenService:Create(new[1], TweenInfo.new(0.1), {ImageTransparency = 0}):Play()
+        services.TweenService:Create(new[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+        return
+    end
+    if old[1] == new[1] then
+        return
+    end
+    switchingTabs = true
+    library.currentTab = new
+    services.TweenService:Create(old[1], TweenInfo.new(0.1), {ImageTransparency = 0.2}):Play()
+    services.TweenService:Create(new[1], TweenInfo.new(0.1), {ImageTransparency = 0}):Play()
+    services.TweenService:Create(old[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0.2}):Play()
+    services.TweenService:Create(new[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+    old[2].Visible = false
+    new[2].Visible = true
+    task.wait(0.1)
+    switchingTabs = false
+end
+
+function drag(frame, hold)
+    if not hold then
+        hold = frame
+    end
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+    local function update(input)
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    hold.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+    services.UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+function library.new(library, name, theme)
+    for _, v in next, services.CoreGui:GetChildren() do
+        if v.Name == "REN" then
+            v:Destroy()
+        end
+    end
+
+    local dogent = Instance.new("ScreenGui")
+    local Main = Instance.new("Frame")
+    local TabMain = Instance.new("Frame")
+    local MainC = Instance.new("UICorner")
+    local SB = Instance.new("Frame")
+    local SBC = Instance.new("UICorner")
+    local Side = Instance.new("Frame")
+    local SideG = Instance.new("UIGradient")
+    local TabBtns = Instance.new("ScrollingFrame")
+    local TabBtnsL = Instance.new("UIListLayout")
+    local ScriptTitle = Instance.new("TextLabel")
+    local SBG = Instance.new("UIGradient")
+    local Open = Instance.new("TextButton")
+    local OpenCorner = Instance.new("UICorner")
+    local UIG = Instance.new("UIGradient")
+    local DropShadowHolder = Instance.new("Frame")
+    local DropShadow = Instance.new("ImageLabel")
+    local UICornerMain = Instance.new("UICorner")
+    local UIGradient = Instance.new("UIGradient")
+    local UIGradientTitle = Instance.new("UIGradient")
+    local BackgroundImage = Instance.new("ImageLabel")
+
+    if syn and syn.protect_gui then
+        syn.protect_gui(dogent)
+    end
+
+    dogent.Name = "REN"
+    dogent.Parent = services.CoreGui
+
+    library.uiElements = {
+        Main = Main,
+        TabMain = TabMain,
+        SB = SB,
+        Side = Side,
+        Open = Open,
+        OpenCorner = OpenCorner,
+        BackgroundImage = BackgroundImage,
+        ScriptTitle = ScriptTitle
+    }
+
+    function UiDestroy()
+        dogent:Destroy()
+    end
+
+    function ToggleUILib()
+        Main.Visible = not Main.Visible
+    end
+
+    function library:UpdateUIStyle()
+        local baseWidth, baseHeight = 572, 353
+        Main.Size = UDim2.new(0, baseWidth * library.uiSettings.uiSize, 0, baseHeight * library.uiSettings.uiSize)
+        Main.Position = library.uiPosition
+
+        Main.BackgroundColor3 = library.uiSettings.backgroundColor
+        Main.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+
+        SB.BackgroundColor3 = library.uiSettings.backgroundColor
+        SB.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+        Side.BackgroundColor3 = library.uiSettings.backgroundColor
+        Side.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+
+        TabMain.Size = UDim2.new(0, 448 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)
+
+        if UICornerMain then
+            UICornerMain.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
+        end
+
+        if SBC then
+            SBC.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
+        end
+
+        if library.uiSettings.backgroundImage and library.uiSettings.backgroundImage ~= "" then
+            BackgroundImage.Image = "rbxassetid://" .. library.uiSettings.backgroundImage
+            BackgroundImage.Visible = true
+        else
+            BackgroundImage.Visible = false
+        end
+
+        Open.Size = UDim2.new(0, library.uiSettings.minimizeSize.X.Offset * library.uiSettings.uiSize, 0, library.uiSettings.minimizeSize.Y.Offset * library.uiSettings.uiSize)
+        Open.BackgroundColor3 = library.uiSettings.backgroundColor
+        Open.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+        Open.TextColor3 = library.uiSettings.textColor
+        Open.TextSize = 14 * library.uiSettings.uiSize
+
+        if library.uiSettings.minimizeShape == "PureCircle" then
+            local size = math.min(library.uiSettings.minimizeSize.X.Offset, library.uiSettings.minimizeSize.Y.Offset) * library.uiSettings.uiSize
+            Open.Size = UDim2.new(0, size, 0, size)
+            OpenCorner.CornerRadius = UDim.new(1, 0)
+        elseif library.uiSettings.minimizeShape == "Circle" then
+            OpenCorner.CornerRadius = UDim.new(0.5, 0)
+        elseif library.uiSettings.minimizeShape == "Rounded" then
+            OpenCorner.CornerRadius = UDim.new(0, 8 * library.uiSettings.uiSize)
+        else
+            OpenCorner.CornerRadius = UDim.new(0, 0)
+        end
+
+        if library.uiSettings.minimizeImage and library.uiSettings.minimizeImage ~= "" then
+            local imageLabel = Open:FindFirstChild("MinimizeImage")
+            if not imageLabel then
+                imageLabel = Instance.new("ImageLabel")
+                imageLabel.Name = "MinimizeImage"
+                imageLabel.Parent = Open
+                imageLabel.BackgroundTransparency = 1
+                imageLabel.Size = UDim2.new(0.7, 0, 0.7, 0)
+                imageLabel.Position = UDim2.new(0.15, 0, 0.15, 0)
+                imageLabel.ZIndex = Open.ZIndex + 1
+            end
+            imageLabel.Image = "rbxassetid://" .. library.uiSettings.minimizeImage
+            Open.Text = ""
+        else
+            local imageLabel = Open:FindFirstChild("MinimizeImage")
+            if imageLabel then
+                imageLabel:Destroy()
+            end
+            Open.Text = "黑洞中心"
+        end
+
+        ScriptTitle.TextColor3 = library.uiSettings.textColor
+        ScriptTitle.TextSize = library.uiSettings.titleTextSize * library.uiSettings.uiSize
+
+        SideG.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
+            ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
+        })
+
+        SBG.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
+            ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
+        })
+
+        for _, tabIco in pairs(TabBtns:GetChildren()) do
+            if tabIco:IsA("ImageLabel") and tabIco:FindFirstChild("TabText") then
+                tabIco.TabText.TextColor3 = library.uiSettings.textColor
+                tabIco.TabText.TextSize = library.uiSettings.tabTextSize * library.uiSettings.uiSize
+            end
+        end
+
+        for _, tab in pairs(TabMain:GetChildren()) do
+            if tab:IsA("ScrollingFrame") then
+                for _, section in pairs(tab:GetChildren()) do
+                    if section:IsA("Frame") and section:FindFirstChild("SectionText") then
+                        section.SectionText.TextColor3 = library.uiSettings.textColor
+                        section.SectionText.TextSize = library.uiSettings.sectionTextSize * library.uiSettings.uiSize
+
+                        section.BackgroundColor3 = library.uiSettings.controlColor
+                        section.BackgroundTransparency = library.uiSettings.controlTransparency
+
+                        local sectionCorner = section:FindFirstChild("SectionC")
+                        if sectionCorner then
+                            sectionCorner.CornerRadius = UDim.new(0, library.uiSettings.sectionCornerRadius * library.uiSettings.uiSize)
+                        end
+
+                        if section:FindFirstChild("Objs") then
+                            local objs = section.Objs
+                            for _, obj in pairs(objs:GetChildren()) do
+                                if obj:IsA("Frame") then
+                                    for _, element in pairs(obj:GetChildren()) do
+                                        if element:IsA("TextButton") or element:IsA("TextLabel") then
+                                            if element.Name == "Btn" or element.Name == "ToggleBtn" or element.Name == "KeybindBtn" or element.Name == "TextboxBack" or element.Name == "SliderBack" or element.Name == "DropdownTop" then
+                                                element.BackgroundColor3 = library.uiSettings.controlColor
+                                                element.BackgroundTransparency = library.uiSettings.controlTransparency
+
+                                                local btnCorner = element:FindFirstChildOfClass("UICorner")
+                                                if btnCorner then
+                                                    btnCorner.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                                                end
+                                            end
+
+                                            if element:IsA("TextButton") then
+                                                element.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                                            elseif element:IsA("TextLabel") then
+                                                element.TextSize = library.uiSettings.labelTextSize * library.uiSettings.uiSize
+                                            end
+
+                                            element.TextColor3 = library.uiSettings.textColor
+                                        end
+
+                                        if element:IsA("Frame") then
+                                            for _, subElement in pairs(element:GetChildren()) do
+                                                if subElement.Name == "ToggleDisable" or subElement.Name == "SliderBar" or subElement.Name == "SliderValBG" or subElement.Name == "BoxBG" or subElement.Name == "KeybindValue" then
+                                                    subElement.BackgroundColor3 = library.uiSettings.backgroundColor
+                                                    subElement.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+
+                                                    local subCorner = subElement:FindFirstChildOfClass("UICorner")
+                                                    if subCorner then
+                                                        if subElement.Name == "SliderBar" then
+                                                            subCorner.CornerRadius = UDim.new(0, library.uiSettings.sliderCornerRadius * library.uiSettings.uiSize)
+                                                        else
+                                                            subCorner.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                                                        end
+                                                    end
+                                                elseif subElement:IsA("TextBox") then
+                                                    subElement.TextSize = library.uiSettings.textboxTextSize * library.uiSettings.uiSize
+                                                    subElement.TextColor3 = library.uiSettings.textColor
+                                                    subElement.PlaceholderColor3 = library.uiSettings.placeholderColor
+                                                elseif subElement:IsA("TextLabel") then
+                                                    subElement.TextSize = library.uiSettings.labelTextSize * library.uiSettings.uiSize
+                                                    subElement.TextColor3 = library.uiSettings.textColor
+                                                end
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+        
+        for _, tabIco in pairs(TabBtns:GetChildren()) do
+            if tabIco:IsA("ImageLabel") then
+                local iconId = library.uiSettings.tabIcon or "4370341699"
+                tabIco.Image = "rbxassetid://" .. iconId
+                
+                tabIco.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+                tabIco.ImageTransparency = library.uiSettings.iconTransparency or 0
+                
+                local iconSize = library.uiSettings.iconSize or 24
+                tabIco.Size = UDim2.new(0, iconSize * library.uiSettings.uiSize, 0, iconSize * library.uiSettings.uiSize)
+            end
+        end
+        
+        for _, tab in pairs(TabMain:GetChildren()) do
+            if tab:IsA("ScrollingFrame") then
+                for _, section in pairs(tab:GetChildren()) do
+                    if section:IsA("Frame") then
+                        local sectionOpen = section:FindFirstChild("SectionOpen")
+                        local sectionOpened = section:FindFirstChild("SectionOpened")
+                        
+                        if sectionOpen then
+                            sectionOpen.Image = "rbxassetid://" .. (library.uiSettings.sectionExpandIcon or "6031302934")
+                            sectionOpen.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+                            sectionOpen.ImageTransparency = library.uiSettings.iconTransparency or 0
+                            sectionOpen.Size = UDim2.new(0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize, 0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize)
+                        end
+                        
+                        if sectionOpened then
+                            sectionOpened.Image = "rbxassetid://" .. (library.uiSettings.sectionCollapseIcon or "6031302932")
+                            sectionOpened.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+                            sectionOpened.ImageTransparency = library.uiSettings.iconTransparency or 0
+                            sectionOpened.Size = UDim2.new(0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize, 0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize)
+                        end
+                    end
+                end
+            end
+        end
+        
+        if library.uiSettings.blurBackground then
+            if not library.uiElements.BlurEffect then
+                local blur = Instance.new("BlurEffect")
+                blur.Name = "BlurEffect"
+                blur.Size = library.uiSettings.blurIntensity
+                blur.Parent = game:GetService("Lighting")
+                library.uiElements.BlurEffect = blur
+            else
+                library.uiElements.BlurEffect.Size = library.uiSettings.blurIntensity
+            end
+        elseif library.uiElements.BlurEffect then
+            library.uiElements.BlurEffect:Destroy()
+            library.uiElements.BlurEffect = nil
+        end
+        
+        if library.uiSettings.glowEffect then
+            if not Main:FindFirstChild("Glow") then
+                local glow = Instance.new("ImageLabel")
+                glow.Name = "Glow"
+                glow.Image = "rbxassetid://4996891970"
+                glow.ImageColor3 = library.uiSettings.glowColor
+                glow.BackgroundTransparency = 1
+                glow.Size = UDim2.new(1, 40, 1, 40)
+                glow.Position = UDim2.new(0, -20, 0, -20)
+                glow.ZIndex = -1
+                glow.Parent = Main
+            end
+        else
+            local glow = Main:FindFirstChild("Glow")
+            if glow then
+                glow:Destroy()
+            end
+        end
+        
+        self:ApplyCurrentLayout()
+    end
+
+    Main.Name = "Main"
+    Main.Parent = dogent
+    Main.AnchorPoint = Vector2.new(0.5, 0.5)
+    Main.BackgroundColor3 = library.uiSettings.backgroundColor
+    Main.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+    Main.BorderColor3 = library.uiSettings.mainColor
+    Main.Position = library.uiPosition
+    Main.Size = UDim2.new(0, 572 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)
+    Main.ZIndex = 1
+    Main.Active = true
+    Main.Draggable = true
+
+    BackgroundImage.Name = "BackgroundImage"
+    BackgroundImage.Parent = Main
+    BackgroundImage.BackgroundTransparency = 1
+    BackgroundImage.Size = UDim2.new(1, 0, 1, 0)
+    BackgroundImage.ZIndex = 0
+    BackgroundImage.Visible = false
+
+    services.UserInputService.InputEnded:Connect(function(input)
+        if input.KeyCode == Enum.KeyCode.LeftControl then
+            if Main.Visible == true then
+                Main.Visible = false
+            else
+                Main.Visible = true
+            end
+        end
+    end)
+
+    drag(Main)
+    UICornerMain.Parent = Main
+    UICornerMain.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
+
+    DropShadowHolder.Name = "DropShadowHolder"
+    DropShadowHolder.Parent = Main
+    DropShadowHolder.BackgroundTransparency = 1.000
+    DropShadowHolder.BorderSizePixel = 0
+    DropShadowHolder.Size = UDim2.new(1, 0, 1, 0)
+    DropShadowHolder.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    DropShadowHolder.ZIndex = 0
+
+    DropShadow.Name = "DropShadow"
+    DropShadow.Parent = DropShadowHolder
+    DropShadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    DropShadow.BackgroundTransparency = 1.000
+    DropShadow.BorderSizePixel = 0
+    DropShadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+    DropShadow.Size = UDim2.new(1, 43, 1, 43)
+    DropShadow.ZIndex = 0
+    DropShadow.Image = "rbxassetid://6015897843"
+    DropShadow.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    DropShadow.ImageTransparency = 0.500
+    DropShadow.ScaleType = Enum.ScaleType.Slice
+    DropShadow.SliceCenter = Rect.new(49, 49, 450, 450)
+
+    UIGradient.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(52, 152, 219)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(41, 128, 185)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(31, 97, 141)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(21, 67, 96)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(52, 152, 219))
+    })
+    UIGradient.Parent = DropShadow
+
+    local TweenService = game:GetService("TweenService")
+    local tweeninfo = TweenInfo.new(7, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1)
+    local tween = TweenService:Create(UIGradient, tweeninfo, {Rotation = 360})
+    tween:Play()
+
+    function toggleui()
+        toggled = not toggled
+        spawn(function()
+            if toggled then
+                wait(0.3)
+            end
+        end)
+        Tween(Main, {0.3, "Sine", "InOut"}, {Size = UDim2.new(0, 609, 0, (toggled and 505 or 0))})
+    end
+
+    TabMain.Name = "TabMain"
+    TabMain.Parent = Main
+    TabMain.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabMain.BackgroundTransparency = 1.000
+    TabMain.Position = UDim2.new(0.217000037, 0, 0, 3)
+    TabMain.Size = UDim2.new(0, 448 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)
+
+    MainC.CornerRadius = UDim.new(0, 5.5)
+    MainC.Name = "MainC"
+    MainC.Parent = Main
+
+    SB.Name = "SB"
+    SB.Parent = Main
+    SB.BackgroundColor3 = library.uiSettings.backgroundColor
+    SB.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+    SB.BorderColor3 = library.uiSettings.mainColor
+    SB.Size = UDim2.new(0, 8 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)
+
+    SBC.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
+    SBC.Name = "SBC"
+    SBC.Parent = SB
+
+    Side.Name = "Side"
+    Side.Parent = SB
+    Side.BackgroundColor3 = library.uiSettings.backgroundColor
+    Side.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+    Side.BorderColor3 = Color3.fromRGB(255, 255, 255)
+    Side.BorderSizePixel = 0
+    Side.ClipsDescendants = true
+    Side.Position = UDim2.new(1, 0, 0, 0)
+    Side.Size = UDim2.new(0, 110 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)
+
+    SideG.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
+        ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
+    })
+    SideG.Rotation = 90
+    SideG.Name = "SideG"
+    SideG.Parent = Side
+
+    TabBtns.Name = "TabBtns"
+    TabBtns.Parent = Side
+    TabBtns.Active = true
+    TabBtns.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    TabBtns.BackgroundTransparency = 1.000
+    TabBtns.BorderSizePixel = 0
+    TabBtns.Position = UDim2.new(0, 0, 0.0973535776, 0)
+    TabBtns.Size = UDim2.new(0, 110 * library.uiSettings.uiSize, 0, 318 * library.uiSettings.uiSize)
+    TabBtns.CanvasSize = UDim2.new(0, 0, 1, 0)
+    TabBtns.ScrollBarThickness = 0
+
+    TabBtnsL.Name = "TabBtnsL"
+    TabBtnsL.Parent = TabBtns
+    TabBtnsL.SortOrder = Enum.SortOrder.LayoutOrder
+    TabBtnsL.Padding = UDim.new(0, 12 * library.uiSettings.uiSize)
+
+    ScriptTitle.Name = "ScriptTitle"
+    ScriptTitle.Parent = Side
+    ScriptTitle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    ScriptTitle.BackgroundTransparency = 1.000
+    ScriptTitle.Position = UDim2.new(0, 0, 0.00953488424, 0)
+    ScriptTitle.Size = UDim2.new(0, 102 * library.uiSettings.uiSize, 0, 20 * library.uiSettings.uiSize)
+    ScriptTitle.Font = Enum.Font.GothamBlack
+    ScriptTitle.Text = name
+    ScriptTitle.TextColor3 = library.uiSettings.textColor
+    ScriptTitle.TextSize = library.uiSettings.titleTextSize * library.uiSettings.uiSize
+    ScriptTitle.TextTransparency = 0
+    ScriptTitle.TextScaled = true
+    ScriptTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+    UIGradientTitle.Parent = ScriptTitle
+
+    local function NPLHKB_fake_script()
+        local script = Instance.new("LocalScript", ScriptTitle)
+        local button = script.Parent
+        local gradient = button.UIGradient
+        local ts = game:GetService("TweenService")
+        local ti = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
+        local offset = {Offset = Vector2.new(1, 0)}
+        local create = ts:Create(gradient, ti, offset)
+        local startingPos = Vector2.new(-1, 0)
+        local list = {}
+        local s, kpt = ColorSequence.new, ColorSequenceKeypoint.new
+        local counter = 0
+        local status = "down"
+        gradient.Offset = startingPos
+        local function rainbowColors()
+            local sat, val = 255, 255
+            for i = 1, 10 do
+                local hue = i * 17
+                table.insert(list, Color3.fromHSV(hue / 255, sat / 255, val / 255))
+            end
+        end
+        rainbowColors()
+        gradient.Color = s({kpt(0, list[#list]), kpt(0.5, list[#list - 1]), kpt(1, list[#list - 2])})
+        counter = #list
+        local function animate()
+            create:Play()
+            create.Completed:Wait()
+            gradient.Offset = startingPos
+            gradient.Rotation = 180
+            if counter == #list - 1 and status == "down" then
+                gradient.Color = s({kpt(0, gradient.Color.Keypoints[1].Value), kpt(0.5, list[#list]), kpt(1, list[1])})
+                counter = 1
+                status = "up"
+            elseif counter == #list and status == "down" then
+                gradient.Color = s({kpt(0, gradient.Color.Keypoints[1].Value), kpt(0.5, list[1]), kpt(1, list[2])})
+                counter = 2
+                status = "up"
+            elseif counter <= #list - 2 and status == "down" then
+                gradient.Color = s({kpt(0, gradient.Color.Keypoints[1].Value), kpt(0.5, list[counter + 1]), kpt(1, list[counter + 2])})
+                counter = counter + 2
+                status = "up"
+            end
+            create:Play()
+            create.Completed:Wait()
+            gradient.Offset = startingPos
+            gradient.Rotation = 0
+            if counter == #list - 1 and status == "up" then
+                gradient.Color = s({kpt(0, list[1]), kpt(0.5, list[#list]), kpt(1, gradient.Color.Keypoints[3].Value)})
+                counter = 1
+                status = "down"
+            elseif counter == #list and status == "up" then
+                gradient.Color = s({kpt(0, list[2]), kpt(0.5, list[1]), kpt(1, gradient.Color.Keypoints[3].Value)})
+                counter = 2
+                status = "down"
+            elseif counter <= #list - 2 and status == "up" then
+                gradient.Color = s({kpt(0, list[counter + 2]), kpt(0.5, list[counter + 1]), kpt(1, gradient.Color.Keypoints[3].Value)})
+                counter = counter + 2
+                status = "down"
+            end
+            animate()
+        end
+        animate()
+    end
+    coroutine.wrap(NPLHKB_fake_script)()
+
+    SBG.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
+        ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
+    })
+    SBG.Rotation = 90
+    SBG.Name = "SBG"
+    SBG.Parent = SB
+
+    TabBtnsL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        TabBtns.CanvasSize = UDim2.new(0, 0, 0, TabBtnsL.AbsoluteContentSize.Y + 18)
+    end)
+
+    Open.Name = "Open"
+    Open.Parent = dogent
+    Open.BackgroundColor3 = library.uiSettings.backgroundColor
+    Open.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+    Open.Position = UDim2.new(0.00829315186, 0, 0.31107837, 0)
+    Open.Size = UDim2.new(0, library.uiSettings.minimizeSize.X.Offset * library.uiSettings.uiSize, 0, library.uiSettings.minimizeSize.Y.Offset * library.uiSettings.uiSize)
+    Open.Font = Enum.Font.GothamBold
+    Open.Text = "黑洞中心"
+    Open.TextColor3 = library.uiSettings.textColor
+    Open.TextTransparency = 0
+    Open.TextSize = 14.000 * library.uiSettings.uiSize
+    Open.Active = true
+    Open.Draggable = true
+    Open.ZIndex = 100
+
+    OpenCorner.Parent = Open
+    if library.uiSettings.minimizeShape == "PureCircle" then
+        local size = math.min(library.uiSettings.minimizeSize.X.Offset, library.uiSettings.minimizeSize.Y.Offset) * library.uiSettings.uiSize
+        Open.Size = UDim2.new(0, size, 0, size)
+        OpenCorner.CornerRadius = UDim.new(1, 0)
+    elseif library.uiSettings.minimizeShape == "Circle" then
+        OpenCorner.CornerRadius = UDim.new(0.5, 0)
+    elseif library.uiSettings.minimizeShape == "Rounded" then
+        OpenCorner.CornerRadius = UDim.new(0, 8 * library.uiSettings.uiSize)
+    else
+        OpenCorner.CornerRadius = UDim.new(0, 0)
+    end
+
+    UIG.Parent = Open
+
+    Open.MouseButton1Click:Connect(function()
+        Main.Visible = not Main.Visible
+        if Main.Visible then
+            library:PlayStartupAnimation()
+        end
+    end)
+
+    Main.Visible = false
+
+    task.spawn(function()
+        task.wait(0.5)
+        Main.Visible = true
+        library:PlayStartupAnimation()
+    end)
+
+    local window = {}
+
+    function window.Tab(window, name, icon)
+        local Tab = Instance.new("ScrollingFrame")
+        local TabIco = Instance.new("ImageLabel")
+        local TabText = Instance.new("TextLabel")
+        local TabBtn = Instance.new("TextButton")
+        local TabL = Instance.new("UIListLayout")
+
+        Tab.Name = "Tab"
+        Tab.Parent = TabMain
+        Tab.Active = true
+        Tab.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        Tab.BackgroundTransparency = 1.000
+        Tab.Size = UDim2.new(1, 0, 1, 0)
+        Tab.ScrollBarThickness = 2 * library.uiSettings.uiSize
+        Tab.Visible = false
+
+        TabIco.Name = "TabIco"
+        TabIco.Parent = TabBtns
+        TabIco.BackgroundTransparency = 1.000
+        TabIco.BorderSizePixel = 0
+        TabIco.Size = UDim2.new(0, 24 * library.uiSettings.uiSize, 0, 24 * library.uiSettings.uiSize)
+        TabIco.Image = ("rbxassetid://%s"):format((icon or 5436396975))
+        TabIco.ImageTransparency = 0.2
+
+        TabText.Name = "TabText"
+        TabText.Parent = TabIco
+        TabText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TabText.BackgroundTransparency = 1.000
+        TabText.Position = UDim2.new(1.41666663, 0, 0, 0)
+        TabText.Size = UDim2.new(0, 76 * library.uiSettings.uiSize, 0, 24 * library.uiSettings.uiSize)
+        TabText.Font = Enum.Font.GothamSemibold
+        TabText.Text = name
+        TabText.TextColor3 = library.uiSettings.textColor
+        TabText.TextSize = library.uiSettings.tabTextSize * library.uiSettings.uiSize
+        TabText.TextTransparency = 0.2
+        TabText.TextXAlignment = Enum.TextXAlignment.Left
+
+        TabBtn.Name = "TabBtn"
+        TabBtn.Parent = TabIco
+        TabBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        TabBtn.BackgroundTransparency = 1.000
+        TabBtn.BorderSizePixel = 0
+        TabBtn.Size = UDim2.new(0, 110 * library.uiSettings.uiSize, 0, 24 * library.uiSettings.uiSize)
+        TabBtn.AutoButtonColor = false
+        TabBtn.Font = Enum.Font.SourceSans
+        TabBtn.Text = ""
+        TabBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+        TabBtn.TextSize = 14.000
+
+        TabL.Name = "TabL"
+        TabL.Parent = Tab
+        TabL.SortOrder = Enum.SortOrder.LayoutOrder
+        TabL.Padding = UDim.new(0, 4 * library.uiSettings.uiSize)
+
+        TabBtn.MouseButton1Click:Connect(function()
+            spawn(function()
+                library:PlayButtonAnimation(TabBtn)
+            end)
+            switchTab({TabIco, Tab})
+        end)
+
+        if library.currentTab == nil then
+            switchTab({TabIco, Tab})
+        end
+
+        TabL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            Tab.CanvasSize = UDim2.new(0, 0, 0, TabL.AbsoluteContentSize.Y + 8 * library.uiSettings.uiSize)
+        end)
+
+        local tab = {}
+
+        function tab.section(tab, name, TabVal)
+            local Section = Instance.new("Frame")
+            local SectionC = Instance.new("UICorner")
+            local SectionText = Instance.new("TextLabel")
+            local SectionOpen = Instance.new("ImageLabel")
+            local SectionOpened = Instance.new("ImageLabel")
+            local SectionToggle = Instance.new("ImageButton")
+            local Objs = Instance.new("Frame")
+            local ObjsL = Instance.new("UIListLayout")
+
+            Section.Name = "Section"
+            Section.Parent = Tab
+            Section.BackgroundColor3 = library.uiSettings.controlColor
+            Section.BackgroundTransparency = library.uiSettings.controlTransparency
+            Section.BorderSizePixel = 0
+            Section.ClipsDescendants = true
+            Section.Size = UDim2.new(0.981000006, 0, 0, 36 * library.uiSettings.uiSize)
+
+            SectionC.CornerRadius = UDim.new(0, library.uiSettings.sectionCornerRadius * library.uiSettings.uiSize)
+            SectionC.Name = "SectionC"
+            SectionC.Parent = Section
+
+            SectionText.Name = "SectionText"
+            SectionText.Parent = Section
+            SectionText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            SectionText.BackgroundTransparency = 1.000
+            SectionText.Position = UDim2.new(0.0887396261, 0, 0, 0)
+            SectionText.Size = UDim2.new(0, 401 * library.uiSettings.uiSize, 0, 36 * library.uiSettings.uiSize)
+            SectionText.Font = Enum.Font.GothamBold
+            SectionText.Text = name
+            SectionText.TextColor3 = library.uiSettings.textColor
+            SectionText.TextSize = library.uiSettings.sectionTextSize * library.uiSettings.uiSize
+            SectionText.TextTransparency = 0
+            SectionText.TextXAlignment = Enum.TextXAlignment.Left
+
+            SectionOpen.Name = "SectionOpen"
+            SectionOpen.Parent = SectionText
+            SectionOpen.BackgroundTransparency = 1
+            SectionOpen.BorderSizePixel = 0
+            SectionOpen.Position = UDim2.new(0, -33 * library.uiSettings.uiSize, 0, 5 * library.uiSettings.uiSize)
+            SectionOpen.Size = UDim2.new(0, 26 * library.uiSettings.uiSize, 0, 26 * library.uiSettings.uiSize)
+            SectionOpen.Image = "http://www.roblox.com/asset/?id=6031302934"
+
+            SectionOpened.Name = "SectionOpened"
+            SectionOpened.Parent = SectionOpen
+            SectionOpened.BackgroundTransparency = 1.000
+            SectionOpened.BorderSizePixel = 0
+            SectionOpened.Size = UDim2.new(0, 26 * library.uiSettings.uiSize, 0, 26 * library.uiSettings.uiSize)
+            SectionOpened.Image = "http://www.roblox.com/asset/?id=6031302932"
+            SectionOpened.ImageTransparency = 1.000
+
+            SectionToggle.Name = "SectionToggle"
+            SectionToggle.Parent = SectionOpen
+            SectionToggle.BackgroundTransparency = 1
+            SectionToggle.BorderSizePixel = 0
+            SectionToggle.Size = UDim2.new(0, 26 * library.uiSettings.uiSize, 0, 26 * library.uiSettings.uiSize)
+
+            Objs.Name = "Objs"
+            Objs.Parent = Section
+            Objs.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+            Objs.BackgroundTransparency = 1
+            Objs.BorderSizePixel = 0
+            Objs.Position = UDim2.new(0, 6 * library.uiSettings.uiSize, 0, 36 * library.uiSettings.uiSize)
+            Objs.Size = UDim2.new(0.986347735, 0, 0, 0)
+
+            ObjsL.Name = "ObjsL"
+            ObjsL.Parent = Objs
+            ObjsL.SortOrder = Enum.SortOrder.LayoutOrder
+            ObjsL.Padding = UDim.new(0, 8 * library.uiSettings.uiSize)
+
+            local open = TabVal
+            if TabVal ~= false then
+                Section.Size = UDim2.new(0.981000006, 0, 0, open and 36 * library.uiSettings.uiSize + ObjsL.AbsoluteContentSize.Y + 8 * library.uiSettings.uiSize or 36 * library.uiSettings.uiSize)
+                SectionOpened.ImageTransparency = (open and 0 or 1)
+                SectionOpen.ImageTransparency = (open and 1 or 0)
+            end
+
+            SectionToggle.MouseButton1Click:Connect(function()
+                open = not open
+                Section.Size = UDim2.new(0.981000006, 0, 0, open and 36 * library.uiSettings.uiSize + ObjsL.AbsoluteContentSize.Y + 8 * library.uiSettings.uiSize or 36 * library.uiSettings.uiSize)
+                SectionOpened.ImageTransparency = (open and 0 or 1)
+                SectionOpen.ImageTransparency = (open and 1 or 0)
+            end)
+
+            ObjsL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                if not open then
+                    return
+                end
+                Section.Size = UDim2.new(0.981000006, 0, 0, 36 * library.uiSettings.uiSize + ObjsL.AbsoluteContentSize.Y + 8 * library.uiSettings.uiSize)
+            end)
+
+            local section = {}
+
+            function section.Button(section, text, callback)
+                local callback = callback or function() end
+                local BtnModule = Instance.new("Frame")
+                local Btn = Instance.new("TextButton")
+                local BtnC = Instance.new("UICorner")
+
+                BtnModule.Name = "BtnModule"
+                BtnModule.Parent = Objs
+                BtnModule.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                BtnModule.BackgroundTransparency = 1.000
+                BtnModule.BorderSizePixel = 0
+                BtnModule.Position = UDim2.new(0, 0, 0, 0)
+                BtnModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+
+                Btn.Name = "Btn"
+                Btn.Parent = BtnModule
+                Btn.BackgroundColor3 = library.uiSettings.controlColor
+                Btn.BackgroundTransparency = library.uiSettings.controlTransparency
+                Btn.BorderSizePixel = 0
+                Btn.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+                Btn.AutoButtonColor = false
+                Btn.Font = Enum.Font.GothamBold
+                Btn.Text = "   " .. text
+                Btn.TextColor3 = library.uiSettings.textColor
+                Btn.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                Btn.TextTransparency = 0
+                Btn.TextXAlignment = Enum.TextXAlignment.Left
+
+                BtnC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                BtnC.Name = "BtnC"
+                BtnC.Parent = Btn
+
+                local funcs = {}
+
+                Btn.MouseButton1Click:Connect(function()
+                    spawn(function()
+                        library:PlayButtonAnimation(Btn)
+                    end)
+                    spawn(callback)
+                end)
+
+                return funcs
+            end
+
+            function section:Label(text)
+                local LabelModule = Instance.new("Frame")
+                local TextLabel = Instance.new("TextLabel")
+                local LabelC = Instance.new("UICorner")
+
+                LabelModule.Name = "LabelModule"
+                LabelModule.Parent = Objs
+                LabelModule.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                LabelModule.BackgroundTransparency = 1.000
+                LabelModule.BorderSizePixel = 0
+                LabelModule.Position = UDim2.new(0, 0, 0, 0)
+                LabelModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 19 * library.uiSettings.uiSize)
+
+                TextLabel.Parent = LabelModule
+                TextLabel.BackgroundColor3 = library.uiSettings.controlColor
+                TextLabel.BackgroundTransparency = library.uiSettings.controlTransparency
+                TextLabel.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 22 * library.uiSettings.uiSize)
+                TextLabel.Font = Enum.Font.GothamBold
+                TextLabel.Text = text
+                TextLabel.TextColor3 = library.uiSettings.textColor
+                TextLabel.TextSize = library.uiSettings.labelTextSize * library.uiSettings.uiSize
+                TextLabel.TextTransparency = 0
+
+                LabelC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                LabelC.Name = "LabelC"
+                LabelC.Parent = TextLabel
+
+                return TextLabel
+            end
+            
+            function section.Toggle(section, text, flag, enabled, callback)
+                local callback = callback or function() end
+                local enabled = enabled or false
+                assert(text, "No text provided")
+                assert(flag, "No flag provided")
+                library.flags[flag] = enabled
+
+                local ToggleModule = Instance.new("Frame")
+                local ToggleBtn = Instance.new("TextButton")
+                local ToggleBtnC = Instance.new("UICorner")
+                local ToggleDisable = Instance.new("Frame")
+                local ToggleSwitch = Instance.new("Frame")
+                local ToggleSwitchC = Instance.new("UICorner")
+                local ToggleDisableC = Instance.new("UICorner")
+
+                ToggleModule.Name = "ToggleModule"
+                ToggleModule.Parent = Objs
+                ToggleModule.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                ToggleModule.BackgroundTransparency = 1.000
+                ToggleModule.BorderSizePixel = 0
+                ToggleModule.Position = UDim2.new(0, 0, 0, 0)
+                ToggleModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+
+                ToggleBtn.Name = "ToggleBtn"
+                ToggleBtn.Parent = ToggleModule
+                ToggleBtn.BackgroundColor3 = library.uiSettings.controlColor
+                ToggleBtn.BackgroundTransparency = library.uiSettings.controlTransparency
+                ToggleBtn.BorderSizePixel = 0
+                ToggleBtn.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+                ToggleBtn.AutoButtonColor = false
+                ToggleBtn.Font = Enum.Font.GothamBold
+                ToggleBtn.Text = "   " .. text
+                ToggleBtn.TextColor3 = library.uiSettings.textColor
+                ToggleBtn.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                ToggleBtn.TextTransparency = 0
+                ToggleBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+                ToggleBtnC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                ToggleBtnC.Name = "ToggleBtnC"
+                ToggleBtnC.Parent = ToggleBtn
+
+                ToggleDisable.Name = "ToggleDisable"
+                ToggleDisable.Parent = ToggleBtn
+                ToggleDisable.BackgroundColor3 = library.uiSettings.backgroundColor
+                ToggleDisable.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+                ToggleDisable.BorderSizePixel = 0
+                ToggleDisable.Position = UDim2.new(0.901869178, 0, 0.208881587, 0)
+                ToggleDisable.Size = UDim2.new(0, 36 * library.uiSettings.uiSize, 0, 22 * library.uiSettings.uiSize)
+
+                ToggleSwitch.Name = "ToggleSwitch"
+                ToggleSwitch.Parent = ToggleDisable
+                ToggleSwitch.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                ToggleSwitch.Size = UDim2.new(0, 24 * library.uiSettings.uiSize, 0, 22 * library.uiSettings.uiSize)
+
+                ToggleSwitchC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                ToggleSwitchC.Name = "ToggleSwitchC"
+                ToggleSwitchC.Parent = ToggleSwitch
+
+                ToggleDisableC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                ToggleDisableC.Name = "ToggleDisableC"
+                ToggleDisableC.Parent = ToggleDisable
+
+                local funcs = {
+                    SetState = function(self, state)
+                        if state == nil then
+                            state = not library.flags[flag]
+                        end
+                        if library.flags[flag] == state then
+                            return
+                        end
+                        library:PlayToggleAnimation(ToggleSwitch, state)
+                        library.flags[flag] = state
+                        callback(state)
+                    end,
+                    Module = ToggleModule
+                }
+
+                if not library.components then
+                    library.components = {}
+                end
+                library.components[flag] = funcs
+
+                if enabled ~= false then
+                    funcs:SetState(flag, true)
+                end
+
+                ToggleBtn.MouseButton1Click:Connect(function()
+                    funcs:SetState()
+                end)
+
+                return funcs
+            end
+
+            function section.Keybind(section, text, default, callback)
+                local callback = callback or function() end
+                assert(text, "No text provided")
+                assert(default, "No default key provided")
+                local default = (typeof(default) == "string" and Enum.KeyCode[default] or default)
+                local banned = {
+                    Return = true,
+                    Space = true,
+                    Tab = true,
+                    Backquote = true,
+                    CapsLock = true,
+                    Escape = true,
+                    Unknown = true
+                }
+                local shortNames = {
+                    RightControl = "Right Ctrl",
+                    LeftControl = "Left Ctrl",
+                    LeftShift = "Left Shift",
+                    RightShift = "Right Shift",
+                    Semicolon = ";",
+                    Quote = '"',
+                    LeftBracket = "[",
+                    RightBracket = "]",
+                    Equals = "=",
+                    Minus = "-",
+                    RightAlt = "Right Alt",
+                    LeftAlt = "Left Alt"
+                }
+                local bindKey = default
+                local keyTxt = (default and (shortNames[default.Name] or default.Name) or "None")
+                local flag = "keybind_" .. text
+
+                local KeybindModule = Instance.new("Frame")
+                local KeybindBtn = Instance.new("TextButton")
+                local KeybindBtnC = Instance.new("UICorner")
+                local KeybindValue = Instance.new("TextButton")
+                local KeybindValueC = Instance.new("UICorner")
+                local KeybindL = Instance.new("UIListLayout")
+                local UIPadding = Instance.new("UIPadding")
+
+                KeybindModule.Name = "KeybindModule"
+                KeybindModule.Parent = Objs
+                KeybindModule.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                KeybindModule.BackgroundTransparency = 1.000
+                KeybindModule.BorderSizePixel = 0
+                KeybindModule.Position = UDim2.new(0, 0, 0, 0)
+                KeybindModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+
+                KeybindBtn.Name = "KeybindBtn"
+                KeybindBtn.Parent = KeybindModule
+                KeybindBtn.BackgroundColor3 = library.uiSettings.controlColor
+                KeybindBtn.BackgroundTransparency = library.uiSettings.controlTransparency
+                KeybindBtn.BorderSizePixel = 0
+                KeybindBtn.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+                KeybindBtn.AutoButtonColor = false
+                KeybindBtn.Font = Enum.Font.GothamBold
+                KeybindBtn.Text = "   " .. text
+                KeybindBtn.TextColor3 = library.uiSettings.textColor
+                KeybindBtn.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                KeybindBtn.TextTransparency = 0
+                KeybindBtn.TextXAlignment = Enum.TextXAlignment.Left
+
+                KeybindBtnC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                KeybindBtnC.Name = "KeybindBtnC"
+                KeybindBtnC.Parent = KeybindBtn
+
+                KeybindValue.Name = "KeybindValue"
+                KeybindValue.Parent = KeybindBtn
+                KeybindValue.BackgroundColor3 = library.uiSettings.backgroundColor
+                KeybindValue.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+                KeybindValue.BorderSizePixel = 0
+                KeybindValue.Position = UDim2.new(0.763033211, 0, 0.289473683, 0)
+                KeybindValue.Size = UDim2.new(0, 100 * library.uiSettings.uiSize, 0, 28 * library.uiSettings.uiSize)
+                KeybindValue.AutoButtonColor = false
+                KeybindValue.Font = Enum.Font.GothamBold
+                KeybindValue.Text = keyTxt
+                KeybindValue.TextColor3 = library.uiSettings.textColor
+                KeybindValue.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                KeybindValue.TextTransparency = 0
+
+                KeybindValueC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                KeybindValueC.Name = "KeybindValueC"
+                KeybindValueC.Parent = KeybindValue
+
+                KeybindL.Name = "KeybindL"
+                KeybindL.Parent = KeybindBtn
+                KeybindL.HorizontalAlignment = Enum.HorizontalAlignment.Right
+                KeybindL.SortOrder = Enum.SortOrder.LayoutOrder
+                KeybindL.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                UIPadding.Parent = KeybindBtn
+                UIPadding.PaddingRight = UDim.new(0, 6 * library.uiSettings.uiSize)
+
+                local funcs = {}
+
+                funcs.Set = function(self, value)
+                    if typeof(value) == "string" then
+                        value = Enum.KeyCode[value]
+                    end
+                    if value and not banned[value.Name] then
+                        bindKey = value
+                        KeybindValue.Text = shortNames[value.Name] or value.Name
+                    end
+                end
+
+                if not library.components then
+                    library.components = {}
+                end
+                library.components[flag] = funcs
+
+                services.UserInputService.InputBegan:Connect(function(inp, gpe)
+                    if gpe then
+                        return
+                    end
+                    if inp.UserInputType ~= Enum.UserInputType.Keyboard then
+                        return
+                    end
+                    if inp.KeyCode ~= bindKey then
+                        return
+                    end
+                    callback(bindKey.Name)
+                end)
+
+                KeybindValue.MouseButton1Click:Connect(function()
+                    KeybindValue.Text = "..."
+                    wait()
+                    local key, uwu = services.UserInputService.InputEnded:Wait()
+                    local keyName = tostring(key.KeyCode.Name)
+                    if key.UserInputType ~= Enum.UserInputType.Keyboard then
+                        KeybindValue.Text = keyTxt
+                        return
+                    end
+                    if banned[keyName] then
+                        KeybindValue.Text = keyTxt
+                        return
+                    end
+                    wait()
+                    bindKey = Enum.KeyCode[keyName]
+                    KeybindValue.Text = shortNames[keyName] or keyName
+                end)
+
+                KeybindValue:GetPropertyChangedSignal("TextBounds"):Connect(function()
+                    KeybindValue.Size = UDim2.new(0, KeybindValue.TextBounds.X + 30 * library.uiSettings.uiSize, 0, 28 * library.uiSettings.uiSize)
+                end)
+
+                KeybindValue.Size = UDim2.new(0, KeybindValue.TextBounds.X + 30 * library.uiSettings.uiSize, 0, 28 * library.uiSettings.uiSize)
+
+                return funcs
+            end
+
+            function section.Textbox(section, text, flag, default, callback)
+                local callback = callback or function() end
+                assert(text, "No text provided")
+                assert(flag, "No flag provided")
+                assert(default, "No default text provided")
+                library.flags[flag] = default
+
+                local TextboxModule = Instance.new("Frame")
+                local TextboxBack = Instance.new("TextButton")
+                local TextboxBackC = Instance.new("UICorner")
+                local BoxBG = Instance.new("TextButton")
+                local BoxBGC = Instance.new("UICorner")
+                local TextBox = Instance.new("TextBox")
+                local TextboxBackL = Instance.new("UIListLayout")
+                local TextboxBackP = Instance.new("UIPadding")
+
+                TextboxModule.Name = "TextboxModule"
+                TextboxModule.Parent = Objs
+                TextboxModule.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                TextboxModule.BackgroundTransparency = 1.000
+                TextboxModule.BorderSizePixel = 0
+                TextboxModule.Position = UDim2.new(0, 0, 0, 0)
+                TextboxModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+
+                TextboxBack.Name = "TextboxBack"
+                TextboxBack.Parent = TextboxModule
+                TextboxBack.BackgroundColor3 = library.uiSettings.controlColor
+                TextboxBack.BackgroundTransparency = library.uiSettings.controlTransparency
+                TextboxBack.BorderSizePixel = 0
+                TextboxBack.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+                TextboxBack.AutoButtonColor = false
+                TextboxBack.Font = Enum.Font.GothamBold
+                TextboxBack.Text = "   " .. text
+                TextboxBack.TextColor3 = library.uiSettings.textColor
+                TextboxBack.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                TextboxBack.TextTransparency = 0
+                TextboxBack.TextXAlignment = Enum.TextXAlignment.Left
+
+                TextboxBackC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                TextboxBackC.Name = "TextboxBackC"
+                TextboxBackC.Parent = TextboxBack
+
+                BoxBG.Name = "BoxBG"
+                BoxBG.Parent = TextboxBack
+                BoxBG.BackgroundColor3 = library.uiSettings.backgroundColor
+                BoxBG.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+                BoxBG.BorderSizePixel = 0
+                BoxBG.Position = UDim2.new(0.763033211, 0, 0.289473683, 0)
+                BoxBG.Size = UDim2.new(0, 100 * library.uiSettings.uiSize, 0, 28 * library.uiSettings.uiSize)
+                BoxBG.AutoButtonColor = false
+                BoxBG.Font = Enum.Font.Gotham
+                BoxBG.Text = ""
+                BoxBG.TextColor3 = Color3.fromRGB(255, 255, 255)
+                BoxBG.TextSize = 14.000
+
+                BoxBGC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                BoxBGC.Name = "BoxBGC"
+                BoxBGC.Parent = BoxBG
+
+                TextBox.Parent = BoxBG
+                TextBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                TextBox.BackgroundTransparency = 1.000
+                TextBox.BorderSizePixel = 0
+                TextBox.Size = UDim2.new(1, 0, 1, 0)
+                TextBox.Font = Enum.Font.GothamBold
+                TextBox.Text = default
+                TextBox.TextColor3 = library.uiSettings.textColor
+                TextBox.PlaceholderColor3 = library.uiSettings.placeholderColor
+                TextBox.TextSize = library.uiSettings.textboxTextSize * library.uiSettings.uiSize
+                TextBox.TextTransparency = 0
+
+                TextboxBackL.Name = "TextboxBackL"
+                TextboxBackL.Parent = TextboxBack
+                TextboxBackL.HorizontalAlignment = Enum.HorizontalAlignment.Right
+                TextboxBackL.SortOrder = Enum.SortOrder.LayoutOrder
+                TextboxBackL.VerticalAlignment = Enum.VerticalAlignment.Center
+
+                TextboxBackP.Name = "TextboxBackP"
+                TextboxBackP.Parent = TextboxBack
+                TextboxBackP.PaddingRight = UDim.new(0, 6 * library.uiSettings.uiSize)
+
+                local funcs = {}
+
+                funcs.Set = function(self, value)
+                    TextBox.Text = value
+                    library.flags[flag] = value
+                    callback(value)
+                end
+
+                if not library.components then
+                    library.components = {}
+                end
+                library.components[flag] = funcs
+
+                TextBox.FocusLost:Connect(function()
+                    if TextBox.Text == "" then
+                        TextBox.Text = default
+                    end
+                    library.flags[flag] = TextBox.Text
+                    callback(TextBox.Text)
+                end)
+
+                TextBox:GetPropertyChangedSignal("TextBounds"):Connect(function()
+                    BoxBG.Size = UDim2.new(0, TextBox.TextBounds.X + 30 * library.uiSettings.uiSize, 0, 28 * library.uiSettings.uiSize)
+                end)
+
+                BoxBG.Size = UDim2.new(0, TextBox.TextBounds.X + 30 * library.uiSettings.uiSize, 0, 28 * library.uiSettings.uiSize)
+
+                return funcs
+            end
+
+            function section.Slider(section, text, flag, default, min, max, precise, callback)
+                local callback = callback or function() end
+                local min = min or 1
+                local max = max or 10
+                local default = default or min
+                local precise = precise or false
+                library.flags[flag] = default
+                assert(text, "No text provided")
+                assert(flag, "No flag provided")
+                assert(default, "No default value provided")
+
+                local SliderModule = Instance.new("Frame")
+                local SliderBack = Instance.new("TextButton")
+                local SliderBackC = Instance.new("UICorner")
+                local SliderBar = Instance.new("Frame")
+                local SliderBarC = Instance.new("UICorner")
+                local SliderPart = Instance.new("Frame")
+                local SliderPartC = Instance.new("UICorner")
+                local SliderValBG = Instance.new("TextButton")
+                local SliderValBGC = Instance.new("UICorner")
+                local SliderValue = Instance.new("TextBox")
+                local MinSlider = Instance.new("TextButton")
+                local AddSlider = Instance.new("TextButton")
+
+                SliderModule.Name = "SliderModule"
+                SliderModule.Parent = Objs
+                SliderModule.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                SliderModule.BackgroundTransparency = 1.000
+                SliderModule.BorderSizePixel = 0
+                SliderModule.Position = UDim2.new(0, 0, 0, 0)
+                SliderModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+
+                SliderBack.Name = "SliderBack"
+                SliderBack.Parent = SliderModule
+                SliderBack.BackgroundColor3 = library.uiSettings.controlColor
+                SliderBack.BackgroundTransparency = library.uiSettings.controlTransparency
+                SliderBack.BorderSizePixel = 0
+                SliderBack.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+                SliderBack.AutoButtonColor = false
+                SliderBack.Font = Enum.Font.GothamBold
+                SliderBack.Text = "   " .. text
+                SliderBack.TextColor3 = library.uiSettings.textColor
+                SliderBack.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                SliderBack.TextTransparency = 0
+                SliderBack.TextXAlignment = Enum.TextXAlignment.Left
+
+                SliderBackC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                SliderBackC.Name = "SliderBackC"
+                SliderBackC.Parent = SliderBack
+
+                SliderBar.Name = "SliderBar"
+                SliderBar.Parent = SliderBack
+                SliderBar.AnchorPoint = Vector2.new(0, 0.5)
+                SliderBar.BackgroundColor3 = library.uiSettings.backgroundColor
+                SliderBar.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+                SliderBar.BorderSizePixel = 0
+                SliderBar.Position = UDim2.new(0.369000018, 40 * library.uiSettings.uiSize, 0.5, 0)
+                SliderBar.Size = UDim2.new(0, 140 * library.uiSettings.uiSize, 0, 12 * library.uiSettings.uiSize)
+
+                SliderBarC.CornerRadius = UDim.new(0, library.uiSettings.sliderCornerRadius * library.uiSettings.uiSize)
+                SliderBarC.Name = "SliderBarC"
+                SliderBarC.Parent = SliderBar
+
+                SliderPart.Name = "SliderPart"
+                SliderPart.Parent = SliderBar
+                SliderPart.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                SliderPart.Size = UDim2.new(0, 54 * library.uiSettings.uiSize, 0, 13 * library.uiSettings.uiSize)
+
+                SliderPartC.CornerRadius = UDim.new(0, library.uiSettings.sliderCornerRadius * library.uiSettings.uiSize)
+                SliderPartC.Name = "SliderPartC"
+                SliderPartC.Parent = SliderPart
+
+                SliderValBG.Name = "SliderValBG"
+                SliderValBG.Parent = SliderBack
+                SliderValBG.BackgroundColor3 = library.uiSettings.backgroundColor
+                SliderValBG.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+                SliderValBG.BorderSizePixel = 0
+                SliderValBG.Position = UDim2.new(0.883177578, 0, 0.131578952, 0)
+                SliderValBG.Size = UDim2.new(0, 44 * library.uiSettings.uiSize, 0, 28 * library.uiSettings.uiSize)
+                SliderValBG.AutoButtonColor = false
+                SliderValBG.Font = Enum.Font.Gotham
+                SliderValBG.Text = ""
+                SliderValBG.TextColor3 = Color3.fromRGB(255, 255, 255)
+                SliderValBG.TextSize = 14.000
+
+                SliderValBGC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                SliderValBGC.Name = "SliderValBGC"
+                SliderValBGC.Parent = SliderValBG
+
+                SliderValue.Name = "SliderValue"
+                SliderValue.Parent = SliderValBG
+                SliderValue.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                SliderValue.BackgroundTransparency = 1.000
+                SliderValue.BorderSizePixel = 0
+                SliderValue.Size = UDim2.new(1, 0, 1, 0)
+                SliderValue.Font = Enum.Font.GothamBold
+                SliderValue.Text = "1000"
+                SliderValue.TextColor3 = library.uiSettings.textColor
+                SliderValue.TextSize = library.uiSettings.sliderValueTextSize * library.uiSettings.uiSize
+                SliderValue.TextTransparency = 0
+
+                MinSlider.Name = "MinSlider"
+                MinSlider.Parent = SliderModule
+                MinSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                MinSlider.BackgroundTransparency = 1.000
+                MinSlider.BorderSizePixel = 0
+                MinSlider.Position = UDim2.new(0.296728969, 40 * library.uiSettings.uiSize, 0.236842096, 0)
+                MinSlider.Size = UDim2.new(0, 20 * library.uiSettings.uiSize, 0, 20 * library.uiSettings.uiSize)
+                MinSlider.Font = Enum.Font.GothamBold
+                MinSlider.Text = "-"
+                MinSlider.TextColor3 = library.uiSettings.textColor
+                MinSlider.TextSize = 24.000 * library.uiSettings.uiSize
+                MinSlider.TextTransparency = 0
+                MinSlider.TextWrapped = true
+
+                AddSlider.Name = "AddSlider"
+                AddSlider.Parent = SliderModule
+                AddSlider.AnchorPoint = Vector2.new(0, 0.5)
+                AddSlider.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                AddSlider.BackgroundTransparency = 1.000
+                AddSlider.BorderSizePixel = 0
+                AddSlider.Position = UDim2.new(0.810906529, 0, 0.5, 0)
+                AddSlider.Size = UDim2.new(0, 20 * library.uiSettings.uiSize, 0, 20 * library.uiSettings.uiSize)
+                AddSlider.Font = Enum.Font.GothamBold
+                AddSlider.Text = "+"
+                AddSlider.TextColor3 = library.uiSettings.textColor
+                AddSlider.TextSize = 24.000 * library.uiSettings.uiSize
+                AddSlider.TextTransparency = 0
+                AddSlider.TextWrapped = true
+
+                local funcs = {
+                    SetValue = function(self, value)
+                        local percent = (mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X
+                        if value then
+                            percent = (value - min) / (max - min)
+                        end
+                        percent = math.clamp(percent, 0, 1)
+                        if precise then
+                            value = value or tonumber(string.format("%.1f", tostring(min + (max - min) * percent)))
+                        else
+                            value = value or math.floor(min + (max - min) * percent)
+                        end
+                        library.flags[flag] = tonumber(value)
+                        SliderValue.Text = tostring(value)
+                        SliderPart.Size = UDim2.new(percent, 0, 1, 0)
+                        callback(tonumber(value))
+                    end
+                }
+
+                if not library.components then
+                    library.components = {}
+                end
+                library.components[flag] = funcs
+
+                MinSlider.MouseButton1Click:Connect(function()
+                    local currentValue = library.flags[flag]
+                    currentValue = math.clamp(currentValue - 1, min, max)
+                    funcs:SetValue(currentValue)
+                end)
+
+                AddSlider.MouseButton1Click:Connect(function()
+                    local currentValue = library.flags[flag]
+                    currentValue = math.clamp(currentValue + 1, min, max)
+                    funcs:SetValue(currentValue)
+                end)
+
+                funcs:SetValue(default)
+
+                local dragging, boxFocused, allowed = false, false, {[""] = true, ["-"] = true}
+
+                SliderBar.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        funcs:SetValue()
+                        dragging = true
+                    end
+                end)
+
+                services.UserInputService.InputEnded:Connect(function(input)
+                    if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
+                        dragging = false
+                    end
+                end)
+
+                services.UserInputService.InputChanged:Connect(function(input)
+                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                        funcs:SetValue()
+                    end
+                end)
+
+                SliderBar.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch then
+                        funcs:SetValue()
+                        dragging = true
+                    end
+                end)
+
+                services.UserInputService.InputEnded:Connect(function(input)
+                    if dragging and input.UserInputType == Enum.UserInputType.Touch then
+                        dragging = false
+                    end
+                end)
+
+                services.UserInputService.InputChanged:Connect(function(input)
+                    if dragging and input.UserInputType == Enum.UserInputType.Touch then
+                        funcs:SetValue()
+                    end
+                end)
+
+                SliderValue.Focused:Connect(function()
+                    boxFocused = true
+                end)
+
+                SliderValue.FocusLost:Connect(function()
+                    boxFocused = false
+                    if SliderValue.Text == "" then
+                        funcs:SetValue(default)
+                    end
+                end)
+
+                SliderValue:GetPropertyChangedSignal("Text"):Connect(function()
+                    if not boxFocused then
+                        return
+                    end
+                    SliderValue.Text = SliderValue.Text:gsub("%D+", "")
+                    local text = SliderValue.Text
+                    if not tonumber(text) then
+                        SliderValue.Text = SliderValue.Text:gsub("%D+", "")
+                    elseif not allowed[text] then
+                        if tonumber(text) > max then
+                            text = max
+                            SliderValue.Text = tostring(max)
+                        end
+                        funcs:SetValue(tonumber(text))
+                    end
+                end)
+
+                return funcs
+            end
+
+            function section.Dropdown(section, text, flag, options, callback)
+                local callback = callback or function() end
+                local options = options or {}
+                assert(text, "No text provided")
+                assert(flag, "No flag provided")
+                library.flags[flag] = nil
+
+                local DropdownModule = Instance.new("Frame")
+                local DropdownTop = Instance.new("TextButton")
+                local DropdownTopC = Instance.new("UICorner")
+                local DropdownOpen = Instance.new("TextButton")
+                local DropdownText = Instance.new("TextBox")
+                local DropdownModuleL = Instance.new("UIListLayout")
+                local Option = Instance.new("TextButton")
+                local OptionC = Instance.new("UICorner")
+
+                DropdownModule.Name = "DropdownModule"
+                DropdownModule.Parent = Objs
+                DropdownModule.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                DropdownModule.BackgroundTransparency = 1.000
+                DropdownModule.BorderSizePixel = 0
+                DropdownModule.ClipsDescendants = true
+                DropdownModule.Position = UDim2.new(0, 0, 0, 0)
+                DropdownModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+
+                DropdownTop.Name = "DropdownTop"
+                DropdownTop.Parent = DropdownModule
+                DropdownTop.BackgroundColor3 = library.uiSettings.controlColor
+                DropdownTop.BackgroundTransparency = library.uiSettings.controlTransparency
+                DropdownTop.BorderSizePixel = 0
+                DropdownTop.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+                DropdownTop.AutoButtonColor = false
+                DropdownTop.Font = Enum.Font.GothamBold
+                DropdownTop.Text = ""
+                DropdownTop.TextColor3 = Color3.fromRGB(255, 255, 255)
+                DropdownTop.TextSize = 16.000
+                DropdownTop.TextXAlignment = Enum.TextXAlignment.Left
+
+                DropdownTopC.CornerRadius = UDim.new(0, library.uiSettings.dropdownCornerRadius * library.uiSettings.uiSize)
+                DropdownTopC.Name = "DropdownTopC"
+                DropdownTopC.Parent = DropdownTop
+
+                DropdownOpen.Name = "DropdownOpen"
+                DropdownOpen.Parent = DropdownTop
+                DropdownOpen.AnchorPoint = Vector2.new(0, 0.5)
+                DropdownOpen.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                DropdownOpen.BackgroundTransparency = 1.000
+                DropdownOpen.BorderSizePixel = 0
+                DropdownOpen.Position = UDim2.new(0.918383181, 0, 0.5, 0)
+                DropdownOpen.Size = UDim2.new(0, 20 * library.uiSettings.uiSize, 0, 20 * library.uiSettings.uiSize)
+                DropdownOpen.Font = Enum.Font.GothamBold
+                DropdownOpen.Text = "+"
+                DropdownOpen.TextColor3 = library.uiSettings.textColor
+                DropdownOpen.TextSize = 24.000 * library.uiSettings.uiSize
+                DropdownOpen.TextTransparency = 0
+                DropdownOpen.TextWrapped = true
+
+                DropdownText.Name = "DropdownText"
+                DropdownText.Parent = DropdownTop
+                DropdownText.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+                DropdownText.BackgroundTransparency = 1.000
+                DropdownText.BorderSizePixel = 0
+                DropdownText.Position = UDim2.new(0.0373831764, 0, 0, 0)
+                DropdownText.Size = UDim2.new(0, 184 * library.uiSettings.uiSize, 0, 38 * library.uiSettings.uiSize)
+                DropdownText.Font = Enum.Font.GothamBold
+                DropdownText.PlaceholderColor3 = library.uiSettings.placeholderColor
+                DropdownText.PlaceholderText = text
+                DropdownText.Text = ""
+                DropdownText.TextColor3 = library.uiSettings.textColor
+                DropdownText.TextSize = library.uiSettings.dropdownTextSize * library.uiSettings.uiSize
+                DropdownText.TextTransparency = 0
+                DropdownText.TextXAlignment = Enum.TextXAlignment.Left
+
+                DropdownModuleL.Name = "DropdownModuleL"
+                DropdownModuleL.Parent = DropdownModule
+                DropdownModuleL.SortOrder = Enum.SortOrder.LayoutOrder
+                DropdownModuleL.Padding = UDim.new(0, 4 * library.uiSettings.uiSize)
+
+                local setAllVisible = function()
+                    local options = DropdownModule:GetChildren()
+                    for i = 1, #options do
+                        local option = options[i]
+                        if option:IsA("TextButton") and option.Name:match("Option_") then
+                            option.Visible = true
+                        end
+                    end
+                end
+
+                local searchDropdown = function(text)
+                    local options = DropdownModule:GetChildren()
+                    for i = 1, #options do
+                        local option = options[i]
+                        if text == "" then
+                            setAllVisible()
+                        else
+                            if option:IsA("TextButton") and option.Name:match("Option_") then
+                                if option.Text:lower():match(text:lower()) then
+                                    option.Visible = true
+                                else
+                                    option.Visible = false
+                                end
+                            end
+                        end
+                    end
+                end
+
+                local open = false
+                local ToggleDropVis = function()
+                    open = not open
+                    if open then
+                        setAllVisible()
+                    end
+                    DropdownOpen.Text = (open and "-" or "+")
+                    DropdownModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, (open and DropdownModuleL.AbsoluteContentSize.Y + 4 * library.uiSettings.uiSize or 38 * library.uiSettings.uiSize))
+                end
+
+                DropdownOpen.MouseButton1Click:Connect(ToggleDropVis)
+
+                DropdownText.Focused:Connect(function()
+                    if open then
+                        return
+                    end
+                    ToggleDropVis()
+                end)
+
+                DropdownText:GetPropertyChangedSignal("Text"):Connect(function()
+                    if not open then
+                        return
+                    end
+                    searchDropdown(DropdownText.Text)
+                end)
+
+                DropdownModuleL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                    if not open then
+                        return
+                    end
+                    DropdownModule.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, (DropdownModuleL.AbsoluteContentSize.Y + 4 * library.uiSettings.uiSize))
+                end)
+
+                local funcs = {}
+
+                funcs.AddOption = function(self, option)
+                    local Option = Instance.new("TextButton")
+                    local OptionC = Instance.new("UICorner")
+
+                    Option.Name = "Option_" .. option
+                    Option.Parent = DropdownModule
+                    Option.BackgroundColor3 = library.uiSettings.controlColor
+                    Option.BackgroundTransparency = library.uiSettings.controlTransparency
+                    Option.BorderSizePixel = 0
+                    Option.Position = UDim2.new(0, 0, 0.328125, 0)
+                    Option.Size = UDim2.new(0, 428 * library.uiSettings.uiSize, 0, 26 * library.uiSettings.uiSize)
+                    Option.AutoButtonColor = false
+                    Option.Font = Enum.Font.GothamBold
+                    Option.Text = option
+                    Option.TextColor3 = library.uiSettings.textColor
+                    Option.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                    Option.TextTransparency = 0
+
+                    OptionC.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                    OptionC.Name = "OptionC"
+                    OptionC.Parent = Option
+
+                    Option.MouseButton1Click:Connect(function()
+                        ToggleDropVis()
+                        callback(Option.Text)
+                        DropdownText.Text = Option.Text
+                        library.flags[flag] = Option.Text
+                    end)
+                end
+
+                funcs.RemoveOption = function(self, option)
+                    local option = DropdownModule:FindFirstChild("Option_" .. option)
+                    if option then
+                        option:Destroy()
+                    end
+                end
+
+                funcs.SetOptions = function(self, options)
+                    for _, v in next, DropdownModule:GetChildren() do
+                        if v.Name:match("Option_") then
+                            v:Destroy()
+                        end
+                    end
+                    for _, v in next, options do
+                        funcs:AddOption(v)
+                    end
+                end
+
+                funcs.Set = function(self, value)
+                    for _, option in next, DropdownModule:GetChildren() do
+                        if option:IsA("TextButton") and option.Name == "Option_" .. value then
+                            option:MouseButton1Click()
+                            break
+                        end
+                    end
+                end
+
+                if not library.components then
+                    library.components = {}
+                end
+                library.components[flag] = funcs
+
+                funcs:SetOptions(options)
+                return funcs
+            end
+            
+            function section.ConfigManager(section)
+                local configName = "默认配置"
+                local statusLabel = section:Label("当前配置: " .. library.currentConfig)
+
+                section:Button("重置所有UI", function()
+                    local defaultSettings = {
+                        mainColor = Color3.fromRGB(0, 0, 0),
+                        backgroundColor = Color3.fromRGB(0, 0, 0),
+                        backgroundColorTransparency = 0.5,
+                        controlColor = Color3.fromRGB(30, 30, 30),
+                        controlTransparency = 0.3,
+                        textColor = Color3.fromRGB(255, 255, 255),
+                        placeholderColor = Color3.fromRGB(180, 180, 180),
+                        disabledTextColor = Color3.fromRGB(150, 150, 150),
+                        uiSize = 1.0,
+                        backgroundImage = "",
+                        minimizeShape = "Square",
+                        minimizeImage = "",
+                        minimizeSize = UDim2.new(0, 61, 0, 32),
+                        cornerRadius = 6,
+                        buttonCornerRadius = 6,
+                        sectionCornerRadius = 6,
+                        sliderCornerRadius = 4,
+                        dropdownCornerRadius = 6,
+                        titleTextSize = 16,
+                        buttonTextSize = 16,
+                        labelTextSize = 14,
+                        sectionTextSize = 16,
+                        tabTextSize = 14,
+                        sliderValueTextSize = 14,
+                        dropdownTextSize = 16,
+                        textboxTextSize = 14
+                    }
+                    
+                    for key, value in pairs(defaultSettings) do
+                        library.uiSettings[key] = value
+                    end
+                    
+                    library.uiSettings.theme = "Default"
+                    library.uiSettings.layout = "Default"
+                    library.uiSettings.animationStyle = "Default"
+                    library.uiSettings.startupAnimation = "FadeIn"
+                    library.uiSettings.buttonAnimation = "Ripple"
+                    library.uiSettings.toggleAnimation = "Slide"
+                    library.uiSettings.sliderAnimation = "Smooth"
+                    library.uiSettings.dropdownAnimation = "Fade"
+                    library.uiSettings.blurBackground = false
+                    library.uiSettings.blurIntensity = 10
+                    library.uiSettings.glowEffect = false
+                    library.uiSettings.glowColor = Color3.fromRGB(0, 150, 255)
+                    library.uiSettings.accentColor = Color3.fromRGB(0, 150, 255)
+                    
+                    library.uiSettings.tabIcon = "5436396975"
+                    library.uiSettings.buttonIcon = ""
+                    library.uiSettings.toggleOnIcon = ""
+                    library.uiSettings.toggleOffIcon = ""
+                    library.uiSettings.dropdownIcon = ""
+                    library.uiSettings.sliderIcon = ""
+                    library.uiSettings.textboxIcon = ""
+                    library.uiSettings.sectionExpandIcon = "6031302934"
+                    library.uiSettings.sectionCollapseIcon = "6031302932"
+                    library.uiSettings.iconSize = 24
+                    library.uiSettings.iconColor = Color3.fromRGB(255, 255, 255)
+                    library.uiSettings.iconTransparency = 0
+                    
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "UI样式已重置为默认值"
+                    SaveConfig(library.currentConfig)
+                end)
+
+                section:Button("保存UI位置", function()
+                    local success, message = library:SaveUIPosition()
+                    statusLabel.Text = message
+                    SaveConfig(library.currentConfig)
+                end)
+
+                section:Button("恢复UI位置", function()
+                    local success, message = library:RestoreUIPosition()
+                    statusLabel.Text = message
+                end)
+
+                section:Textbox("配置名称", "config_name", configName, function(value)
+                    configName = value
+                end)
+
+                section:Button("保存配置", function()
+                    local success, message = SaveConfig(configName)
+                    statusLabel.Text = message
+                    local tempLabel = section:Label("✓ " .. message)
+                    task.delay(3, function()
+                        if tempLabel and tempLabel.Parent then
+                            tempLabel:Destroy()
+                        end
+                    end)
+                end)
+
+                section:Button("加载配置", function()
+                    local success, message = LoadConfig(configName)
+                    statusLabel.Text = message
+                    local tempLabel = section:Label("✓ " .. message)
+                    task.delay(3, function()
+                        if tempLabel and tempLabel.Parent then
+                            tempLabel:Destroy()
+                        end
+                    end)
+                end)
+
+                section:Button("删除配置", function()
+                    local success, message = DeleteConfig(configName)
+                    statusLabel.Text = message
+                    local tempLabel = section:Label("✗ " .. message)
+                    task.delay(3, function()
+                        if tempLabel and tempLabel.Parent then
+                            tempLabel:Destroy()
+                        end
+                    end)
+                end)
+
+                section:Button("复制配置数据", function()
+                    local success, message = CopyConfigData()
+                    statusLabel.Text = message
+                    local tempLabel = section:Label("✓ " .. message)
+                    task.delay(3, function()
+                        if tempLabel and tempLabel.Parent then
+                            tempLabel:Destroy()
+                        end
+                    end)
+                end)
+
+                local configDataInput = section:Textbox("配置JSON数据", "config_json_data", "", function(value) end)
+
+                section:Button("更新配置数据", function()
+                    local jsonData = library.flags.config_json_data or ""
+                    if jsonData == "" then
+                        statusLabel.Text = "请输入JSON数据"
+                        return
+                    end
+                    local success, message = UpdateConfigFromData(jsonData)
+                    statusLabel.Text = message
+                    local tempLabel = section:Label("✓ " .. message)
+                    task.delay(3, function()
+                        if tempLabel and tempLabel.Parent then
+                            tempLabel:Destroy()
+                        end
+                    end)
+                end)
+
+                local configList = GetConfigList()
+                local dropdown = section:Dropdown("选择配置", "config_selector", configList, function(selected)
+                    configName = selected
+                    local success, message = LoadConfig(selected)
+                    statusLabel.Text = "已加载: " .. selected
+                end)
+
+                section:Button("刷新配置列表", function()
+                    local newConfigList = GetConfigList()
+                    dropdown:SetOptions(newConfigList)
+                    statusLabel.Text = "配置列表已刷新 (" .. #newConfigList .. " 个配置)"
+                end)
+
+                section:Toggle("启用自动保存", "auto_save", false, function(state)
+                    if state then
+                        task.spawn(function()
+                            while library.flags.auto_save do
+                                task.wait(2)
+                                SaveConfig("自动保存")
+                                statusLabel.Text = "自动保存完成: " .. os.date("%H:%M:%S")
+                            end
+                        end)
+                    end
+                end)
+            end
+
+            function section.UIStyleSettings(section)
+                local statusLabel = section:Label("UI样式设置")
+                
+                local themeLabel = section:Label("主题设置")
+                
+                local themeDropdown = section:Dropdown("选择主题", "ui_theme", {"Default", "Dark", "Light", "Cyberpunk", "Material", "Gradient"}, function(selected)
+                    library:ApplyTheme(selected)
+                    statusLabel.Text = "已应用主题: " .. selected
+                end)
+                
+                local layoutDropdown = section:Dropdown("选择布局", "ui_layout", {"Default", "Compact", "Modern", "Minimal"}, function(selected)
+                    library:ApplyLayout(selected)
+                    statusLabel.Text = "已应用布局: " .. selected
+                end)
+                
+                local animationStyleDropdown = section:Dropdown("动画风格", "ui_animation_style", {"Default", "Smooth", "Bounce", "Elegant"}, function(selected)
+                    library:ApplyAnimationStyle(selected)
+                    statusLabel.Text = "已应用动画风格: " .. selected
+                end)
+                
+                local startupAnimationDropdown = section:Dropdown("启动动画", "ui_startup_animation", {"FadeIn", "SlideIn", "ZoomIn", "BounceIn", "FlipIn", "WaveIn", "SpinIn", "None"}, function(selected)
+                    library.uiSettings.startupAnimation = selected
+                    statusLabel.Text = "启动动画: " .. selected
+                end)
+                
+                local buttonAnimationDropdown = section:Dropdown("按钮动画", "ui_button_animation", {"Ripple", "Scale", "Bounce", "Glow", "Shake", "Pulse"}, function(selected)
+                    library.uiSettings.buttonAnimation = selected
+                    statusLabel.Text = "按钮动画: " .. selected
+                end)
+                
+                local toggleAnimationDropdown = section:Dropdown("切换动画", "ui_toggle_animation", {"Slide", "Fade", "Scale", "Bounce", "Rotate"}, function(selected)
+                    library.uiSettings.toggleAnimation = selected
+                    statusLabel.Text = "切换动画: " .. selected
+                end)
+                
+                local blurToggle = section:Toggle("背景模糊", "ui_blur_background", library.uiSettings.blurBackground, function(state)
+                    library.uiSettings.blurBackground = state
+                    library:UpdateUIStyle()
+                    statusLabel.Text = state and "背景模糊已启用" or "背景模糊已禁用"
+                end)
+                
+                local blurIntensitySlider = section:Slider("模糊强度", "ui_blur_intensity", library.uiSettings.blurIntensity, 1, 20, false, function(value)
+                    library.uiSettings.blurIntensity = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "模糊强度: " .. value
+                end)
+                
+                local glowToggle = section:Toggle("发光效果", "ui_glow_effect", library.uiSettings.glowEffect, function(state)
+                    library.uiSettings.glowEffect = state
+                    library:UpdateUIStyle()
+                    statusLabel.Text = state and "发光效果已启用" or "发光效果已禁用"
+                end)
+                
+                local glowColorTextbox = section:Textbox("发光颜色 (R,G,B)", "ui_glow_color", math.floor(library.uiSettings.glowColor.R * 255) .. "," .. math.floor(library.uiSettings.glowColor.G * 255) .. "," .. math.floor(library.uiSettings.glowColor.B * 255), function(value)
+                    local r, g, b = value:match("(%d+),(%d+),(%d+)")
+                    if r and g and b then
+                        library.uiSettings.glowColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                        library:UpdateUIStyle()
+                        statusLabel.Text = "发光颜色已更新"
+                    end
+                end)
+                
+                local accentColorTextbox = section:Textbox("强调色 (R,G,B)", "ui_accent_color", math.floor(library.uiSettings.accentColor.R * 255) .. "," .. math.floor(library.uiSettings.accentColor.G * 255) .. "," .. math.floor(library.uiSettings.accentColor.B * 255), function(value)
+                    local r, g, b = value:match("(%d+),(%d+),(%d+)")
+                    if r and g and b then
+                        library.uiSettings.accentColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                        library:UpdateUIStyle()
+                        statusLabel.Text = "强调色已更新"
+                    end
+                end)
+                
+                local presetLabel = section:Label("主题预设")
+                
+                section:Button("应用暗色主题", function()
+                    library:ApplyTheme("Dark")
+                    library:ApplyLayout("Compact")
+                    library:ApplyAnimationStyle("Smooth")
+                    statusLabel.Text = "已应用暗色主题预设"
+                end)
+                
+                section:Button("应用现代主题", function()
+                    library:ApplyTheme("Material")
+                    library:ApplyLayout("Modern")
+                    library:ApplyAnimationStyle("Elegant")
+                    statusLabel.Text = "已应用现代主题预设"
+                end)
+                
+                section:Button("应用赛博朋克", function()
+                    library:ApplyTheme("Cyberpunk")
+                    library:ApplyLayout("Default")
+                    library:ApplyAnimationStyle("Bounce")
+                    statusLabel.Text = "已应用赛博朋克主题"
+                end)
+                
+                section:Button("预览启动动画", function()
+                    library.uiElements.Main.Visible = false
+                    wait(0.5)
+                    library:PlayStartupAnimation()
+                    statusLabel.Text = "启动动画预览完成"
+                end)
+                
+                local uiSizeSlider = section:Slider("UI大小缩放", "ui_size", library.uiSettings.uiSize, 0.1, 2.0, true, function(value)
+                    library.uiSettings.uiSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "UI大小已设置为: " .. string.format("%.1f", value)
+                end)
+
+                local cornerRadiusSlider = section:Slider("主圆角大小", "corner_radius", library.uiSettings.cornerRadius, 0, 200, false, function(value)
+                    library.uiSettings.cornerRadius = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "主圆角大小已设置为: " .. value
+                end)
+
+                local buttonCornerSlider = section:Slider("按钮圆角大小", "button_corner", library.uiSettings.buttonCornerRadius, 0, 200, false, function(value)
+                    library.uiSettings.buttonCornerRadius = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "按钮圆角大小已设置为: " .. value
+                end)
+
+                local sectionCornerSlider = section:Slider("区域圆角大小", "section_corner", library.uiSettings.sectionCornerRadius, 0, 200, false, function(value)
+                    library.uiSettings.sectionCornerRadius = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "区域圆角大小已设置为: " .. value
+                end)
+
+                local sliderCornerSlider = section:Slider("滑块圆角大小", "slider_corner", library.uiSettings.sliderCornerRadius, 0, 100, false, function(value)
+                    library.uiSettings.sliderCornerRadius = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "滑块圆角大小已设置为: " .. value
+                end)
+
+                local dropdownCornerSlider = section:Slider("下拉框圆角大小", "dropdown_corner", library.uiSettings.dropdownCornerRadius, 0, 200, false, function(value)
+                    library.uiSettings.dropdownCornerRadius = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "下拉框圆角大小已设置为: " .. value
+                end)
+
+                local titleTextSizeSlider = section:Slider("标题文本大小", "title_text_size", library.uiSettings.titleTextSize, 8, 24, false, function(value)
+                    library.uiSettings.titleTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "标题文本大小已设置为: " .. value
+                end)
+
+                local buttonTextSizeSlider = section:Slider("按钮文本大小", "button_text_size", library.uiSettings.buttonTextSize, 8, 24, false, function(value)
+                    library.uiSettings.buttonTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "按钮文本大小已设置为: " .. value
+                end)
+
+                local labelTextSizeSlider = section:Slider("标签文本大小", "label_text_size", library.uiSettings.labelTextSize, 8, 20, false, function(value)
+                    library.uiSettings.labelTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "标签文本大小已设置为: " .. value
+                end)
+
+                local sectionTextSizeSlider = section:Slider("区域文本大小", "section_text_size", library.uiSettings.sectionTextSize, 8, 24, false, function(value)
+                    library.uiSettings.sectionTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "区域文本大小已设置为: " .. value
+                end)
+
+                local tabTextSizeSlider = section:Slider("标签页文本大小", "tab_text_size", library.uiSettings.tabTextSize, 8, 20, false, function(value)
+                    library.uiSettings.tabTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "标签页文本大小已设置为: " .. value
+                end)
+
+                local sliderValueTextSizeSlider = section:Slider("滑块值文本大小", "slider_value_text_size", library.uiSettings.sliderValueTextSize, 8, 20, false, function(value)
+                    library.uiSettings.sliderValueTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "滑块值文本大小已设置为: " .. value
+                end)
+
+                local dropdownTextSizeSlider = section:Slider("下拉框文本大小", "dropdown_text_size", library.uiSettings.dropdownTextSize, 8, 24, false, function(value)
+                    library.uiSettings.dropdownTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "下拉框文本大小已设置为: " .. value
+                end)
+
+                local textboxTextSizeSlider = section:Slider("文本框文本大小", "textbox_text_size", library.uiSettings.textboxTextSize, 8, 20, false, function(value)
+                    library.uiSettings.textboxTextSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "文本框文本大小已设置为: " .. value
+                end)
+
+                local bgTransparencySlider = section:Slider("背景透明度", "bg_transparency", library.uiSettings.backgroundColorTransparency, 0, 1, true, function(value)
+                    library.uiSettings.backgroundColorTransparency = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "背景透明度已设置为: " .. string.format("%.1f", value)
+                end)
+
+                local controlTransparencySlider = section:Slider("控件透明度", "control_transparency", library.uiSettings.controlTransparency, 0, 1, true, function(value)
+                    library.uiSettings.controlTransparency = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "控件透明度已设置为: " .. string.format("%.1f", value)
+                end)
+
+                local bgImageTextbox = section:Textbox("背景图片ID", "bg_image", library.uiSettings.backgroundImage, function(value)
+                    library.uiSettings.backgroundImage = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "背景图片已设置"
+                end)
+
+                local shapeDropdown = section:Dropdown("最小化形状", "minimize_shape", {"Square", "Circle", "Rounded", "PureCircle"}, function(selected)
+                    library.uiSettings.minimizeShape = selected
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "最小化形状已设置为: " .. selected
+                end)
+                task.spawn(function()
+                    task.wait(0.1)
+                    if shapeDropdown and shapeDropdown.Set then
+                        shapeDropdown:Set(library.uiSettings.minimizeShape)
+                    end
+                end)
+
+                local minimizeImageTextbox = section:Textbox("最小化图片ID", "minimize_image", library.uiSettings.minimizeImage, function(value)
+                    library.uiSettings.minimizeImage = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "最小化图片已设置"
+                end)
+
+                local widthSlider = section:Slider("最小化宽度", "minimize_width", library.uiSettings.minimizeSize.X.Offset, 40, 120, false, function(value)
+                    library.uiSettings.minimizeSize = UDim2.new(0, value, 0, library.uiSettings.minimizeSize.Y.Offset)
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "最小化宽度已设置为: " .. value
+                end)
+
+                local heightSlider = section:Slider("最小化高度", "minimize_height", library.uiSettings.minimizeSize.Y.Offset, 20, 60, false, function(value)
+                    library.uiSettings.minimizeSize = UDim2.new(0, library.uiSettings.minimizeSize.X.Offset, 0, value)
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "最小化高度已设置为: " .. value
+                end)
+
+                local colorLabel = section:Label("颜色设置")
+
+                local mainColorTextbox = section:Textbox("主色调 (R,G,B)", "main_color", math.floor(library.uiSettings.mainColor.R * 255) .. "," .. math.floor(library.uiSettings.mainColor.G * 255) .. "," .. math.floor(library.uiSettings.mainColor.B * 255), function(value)
+                    local r, g, b = value:match("(%d+),(%d+),(%d+)")
+                    if r and g and b then
+                        library.uiSettings.mainColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                        library:UpdateUIStyle()
+                        statusLabel.Text = "主色调已更新"
+                    else
+                        statusLabel.Text = "颜色格式错误 (使用 R,G,B 格式)"
+                    end
+                end)
+
+                local bgColorTextbox = section:Textbox("背景色 (R,G,B)", "bg_color", math.floor(library.uiSettings.backgroundColor.R * 255) .. "," .. math.floor(library.uiSettings.backgroundColor.G * 255) .. "," .. math.floor(library.uiSettings.backgroundColor.B * 255), function(value)
+                    local r, g, b = value:match("(%d+),(%d+),(%d+)")
+                    if r and g and b then
+                        library.uiSettings.backgroundColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                        library:UpdateUIStyle()
+                        statusLabel.Text = "背景色已更新"
+                    else
+                        statusLabel.Text = "颜色格式错误 (使用 R,G,B 格式)"
+                    end
+                end)
+
+                local controlColorTextbox = section:Textbox("控件颜色 (R,G,B)", "control_color", math.floor(library.uiSettings.controlColor.R * 255) .. "," .. math.floor(library.uiSettings.controlColor.G * 255) .. "," .. math.floor(library.uiSettings.controlColor.B * 255), function(value)
+                    local r, g, b = value:match("(%d+),(%d+),(%d+)")
+                    if r and g and b then
+                        library.uiSettings.controlColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                        library:UpdateUIStyle()
+                        statusLabel.Text = "控件颜色已更新"
+                    else
+                        statusLabel.Text = "颜色格式错误 (使用 R,G,B 格式)"
+                    end
+                end)
+
+                local textColorTextbox = section:Textbox("文本颜色 (R,G,B)", "text_color", math.floor(library.uiSettings.textColor.R * 255) .. "," .. math.floor(library.uiSettings.textColor.G * 255) .. "," .. math.floor(library.uiSettings.textColor.B * 255), function(value)
+                    local r, g, b = value:match("(%d+),(%d+),(%d+)")
+                    if r and g and b then
+                        library.uiSettings.textColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                        library:UpdateUIStyle()
+                        statusLabel.Text = "文本颜色已更新"
+                    else
+                        statusLabel.Text = "颜色格式错误 (使用 R,G,B 格式)"
+                    end
+                end)
+                
+                local iconLabel = section:Label("更多图标设置")
+    
+                local tabIconTextbox = section:Textbox("标签页图标ID", "tab_icon", library.uiSettings.tabIcon or "5436396975", function(value)
+                    library.uiSettings.tabIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "标签页图标已更新"
+                end)
+                
+                local buttonIconTextbox = section:Textbox("按钮图标ID", "button_icon", library.uiSettings.buttonIcon or "", function(value)
+                    library.uiSettings.buttonIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "按钮图标已更新"
+                end)
+                
+                local toggleOnIconTextbox = section:Textbox("开关开启图标ID", "toggle_on_icon", library.uiSettings.toggleOnIcon or "", function(value)
+                    library.uiSettings.toggleOnIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "开关开启图标已更新"
+                end)
+                
+                local toggleOffIconTextbox = section:Textbox("开关关闭图标ID", "toggle_off_icon", library.uiSettings.toggleOffIcon or "", function(value)
+                    library.uiSettings.toggleOffIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "开关关闭图标已更新"
+                end)
+                
+                local dropdownIconTextbox = section:Textbox("下拉框图标ID", "dropdown_icon", library.uiSettings.dropdownIcon or "", function(value)
+                    library.uiSettings.dropdownIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "下拉框图标已更新"
+                end)
+                
+                local sliderIconTextbox = section:Textbox("滑块图标ID", "slider_icon", library.uiSettings.sliderIcon or "", function(value)
+                    library.uiSettings.sliderIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "滑块图标已更新"
+                end)
+                
+                local textboxIconTextbox = section:Textbox("文本框图标ID", "textbox_icon", library.uiSettings.textboxIcon or "", function(value)
+                    library.uiSettings.textboxIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "文本框图标已更新"
+                end)
+                
+                local sectionExpandIconTextbox = section:Textbox("章节展开图标ID", "section_expand_icon", library.uiSettings.sectionExpandIcon or "6031302934", function(value)
+                    library.uiSettings.sectionExpandIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "章节展开图标已更新"
+                end)
+                
+                local sectionCollapseIconTextbox = section:Textbox("章节折叠图标ID", "section_collapse_icon", library.uiSettings.sectionCollapseIcon or "6031302932", function(value)
+                    library.uiSettings.sectionCollapseIcon = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "章节折叠图标已更新"
+                end)
+                
+                local iconSizeSlider = section:Slider("图标大小", "icon_size", library.uiSettings.iconSize or 24, 16, 32, false, function(value)
+                    library.uiSettings.iconSize = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "图标大小已设置为: " .. value
+                end)
+                
+                local iconColorTextbox = section:Textbox("图标颜色 (R,G,B)", "icon_color", library.uiSettings.iconColor and math.floor(library.uiSettings.iconColor.R * 255) .. "," .. math.floor(library.uiSettings.iconColor.G * 255) .. "," .. math.floor(library.uiSettings.iconColor.B * 255) or "255,255,255", function(value)
+                    local r, g, b = value:match("(%d+),(%d+),(%d+)")
+                    if r and g and b then
+                        library.uiSettings.iconColor = Color3.fromRGB(tonumber(r), tonumber(g), tonumber(b))
+                        library:UpdateUIStyle()
+                        statusLabel.Text = "图标颜色已更新"
+                    else
+                        statusLabel.Text = "颜色格式错误 (使用 R,G,B 格式)"
+                    end
+                end)
+                
+                local iconTransparencySlider = section:Slider("图标透明度", "icon_transparency", library.uiSettings.iconTransparency or 0, 0, 1, true, function(value)
+                    library.uiSettings.iconTransparency = value
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "图标透明度已设置为: " .. string.format("%.1f", value)
+                end)
+                
+                local presetIcons = {
+                    {"默认标签页", "5436396975"},
+                    {"设置图标", "6031280882"},
+                    {"主页图标", "6031265976"},
+                    {"游戏图标", "6031219392"},
+                    {"脚本图标", "6031302934"},
+                    {"用户图标", "6031280882"},
+                    {"信息图标", "6031280882"},
+                    {"工具图标", "6031280882"}
+                }
+                
+                local presetNames = {}
+                for _, preset in ipairs(presetIcons) do
+                    table.insert(presetNames, preset[1])
+                end
+                table.insert(presetNames, 1, "选择预设...")
+                
+                local iconPresetDropdown = section:Dropdown("图标预设", "icon_preset", presetNames, function(selected)
+                    for _, preset in ipairs(presetIcons) do
+                        if preset[1] == selected then
+                            tabIconTextbox.Text = preset[2]
+                            library.uiSettings.tabIcon = preset[2]
+                            library:UpdateUIStyle()
+                            statusLabel.Text = "已应用预设: " .. selected
+                            break
+                        end
+                    end
+                end)
+                
+                section:Button("预览当前图标", function()
+                    local previewFrame = Instance.new("Frame")
+                    previewFrame.Name = "IconPreview"
+                    previewFrame.Parent = dogent
+                    previewFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+                    previewFrame.BorderSizePixel = 0
+                    previewFrame.Position = UDim2.new(0.5, -150, 0.5, -100)
+                    previewFrame.Size = UDim2.new(0, 300, 0, 200)
+                    previewFrame.ZIndex = 1000
+                    
+                    local corner = Instance.new("UICorner")
+                    corner.CornerRadius = UDim.new(0, 8)
+                    corner.Parent = previewFrame
+                    
+                    local title = Instance.new("TextLabel")
+                    title.Parent = previewFrame
+                    title.BackgroundTransparency = 1
+                    title.Position = UDim2.new(0, 0, 0, 10)
+                    title.Size = UDim2.new(1, 0, 0, 30)
+                    title.Text = "图标预览"
+                    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    title.TextSize = 18
+                    title.Font = Enum.Font.GothamBold
+                    title.ZIndex = 1001
+                    
+                    local closeBtn = Instance.new("TextButton")
+                    closeBtn.Parent = previewFrame
+                    closeBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
+                    closeBtn.Position = UDim2.new(1, -30, 0, 5)
+                    closeBtn.Size = UDim2.new(0, 25, 0, 25)
+                    closeBtn.Text = "X"
+                    closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                    closeBtn.TextSize = 14
+                    closeBtn.ZIndex = 1001
+                    
+                    local corner2 = Instance.new("UICorner")
+                    corner2.CornerRadius = UDim.new(0, 4)
+                    corner2.Parent = closeBtn
+                    
+                    closeBtn.MouseButton1Click:Connect(function()
+                        previewFrame:Destroy()
+                    end)
+                    
+                    local iconGrid = Instance.new("Frame")
+                    iconGrid.Parent = previewFrame
+                    iconGrid.BackgroundTransparency = 1
+                    iconGrid.Position = UDim2.new(0, 20, 0, 50)
+                    iconGrid.Size = UDim2.new(1, -40, 1, -70)
+                    iconGrid.ZIndex = 1001
+                    
+                    local gridLayout = Instance.new("UIGridLayout")
+                    gridLayout.Parent = iconGrid
+                    gridLayout.CellSize = UDim2.new(0, 60, 0, 60)
+                    gridLayout.CellPadding = UDim2.new(0, 10, 0, 10)
+                    gridLayout.StartCorner = Enum.StartCorner.TopLeft
+                    
+                    local iconsToPreview = {
+                        {"标签页", library.uiSettings.tabIcon},
+                        {"按钮", library.uiSettings.buttonIcon},
+                        {"开关开", library.uiSettings.toggleOnIcon},
+                        {"开关关", library.uiSettings.toggleOffIcon},
+                        {"下拉框", library.uiSettings.dropdownIcon},
+                        {"滑块", library.uiSettings.sliderIcon},
+                        {"文本框", library.uiSettings.textboxIcon},
+                        {"展开", library.uiSettings.sectionExpandIcon},
+                        {"折叠", library.uiSettings.sectionCollapseIcon}
+                    }
+                    
+                    for _, iconData in ipairs(iconsToPreview) do
+                        local iconFrame = Instance.new("Frame")
+                        iconFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                        iconFrame.Size = UDim2.new(0, 60, 0, 60)
+                        iconFrame.ZIndex = 1002
+                        
+                        local iconCorner = Instance.new("UICorner")
+                        iconCorner.CornerRadius = UDim.new(0, 6)
+                        iconCorner.Parent = iconFrame
+                        
+                        local iconImage = Instance.new("ImageLabel")
+                        iconImage.Parent = iconFrame
+                        iconImage.BackgroundTransparency = 1
+                        iconImage.Size = UDim2.new(0.7, 0, 0.7, 0)
+                        iconImage.Position = UDim2.new(0.15, 0, 0.15, 0)
+                        iconImage.ZIndex = 1003
+                        
+                        if iconData[2] and iconData[2] ~= "" then
+                            iconImage.Image = "rbxassetid://" .. iconData[2]
+                        end
+                        
+                        local iconLabel = Instance.new("TextLabel")
+                        iconLabel.Parent = iconFrame
+                        iconLabel.BackgroundTransparency = 1
+                        iconLabel.Position = UDim2.new(0, 0, 0.8, 0)
+                        iconLabel.Size = UDim2.new(1, 0, 0.2, 0)
+                        iconLabel.Text = iconData[1]
+                        iconLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+                        iconLabel.TextSize = 10
+                        iconLabel.ZIndex = 1003
+                    end
+                    
+                    drag(previewFrame)
+                end)
+                
+                section:Button("重置图标设置", function()
+                    library.uiSettings.tabIcon = "5436396975"
+                    library.uiSettings.buttonIcon = ""
+                    library.uiSettings.toggleOnIcon = ""
+                    library.uiSettings.toggleOffIcon = ""
+                    library.uiSettings.dropdownIcon = ""
+                    library.uiSettings.sliderIcon = ""
+                    library.uiSettings.textboxIcon = ""
+                    library.uiSettings.sectionExpandIcon = "6031302934"
+                    library.uiSettings.sectionCollapseIcon = "6031302932"
+                    library.uiSettings.iconSize = 24
+                    library.uiSettings.iconColor = Color3.fromRGB(255, 255, 255)
+                    library.uiSettings.iconTransparency = 0
+                    
+                    if tabIconTextbox then tabIconTextbox:Set("5436396975") end
+                    if buttonIconTextbox then buttonIconTextbox:Set("") end
+                    if toggleOnIconTextbox then toggleOnIconTextbox:Set("") end
+                    if toggleOffIconTextbox then toggleOffIconTextbox:Set("") end
+                    if dropdownIconTextbox then dropdownIconTextbox:Set("") end
+                    if sliderIconTextbox then sliderIconTextbox:Set("") end
+                    if textboxIconTextbox then textboxIconTextbox:Set("") end
+                    if sectionExpandIconTextbox then sectionExpandIconTextbox:Set("6031302934") end
+                    if sectionCollapseIconTextbox then sectionCollapseIconTextbox:Set("6031302932") end
+                    if iconSizeSlider then iconSizeSlider:SetValue(24) end
+                    if iconColorTextbox then iconColorTextbox:Set("255,255,255") end
+                    if iconTransparencySlider then iconTransparencySlider:SetValue(0) end
+                    
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "图标设置已重置"
+                end)
+                
+                section:Button("保存图标配置", function()
+                    local iconConfig = {
+                        tabIcon = library.uiSettings.tabIcon,
+                        buttonIcon = library.uiSettings.buttonIcon,
+                        toggleOnIcon = library.uiSettings.toggleOnIcon,
+                        toggleOffIcon = library.uiSettings.toggleOffIcon,
+                        dropdownIcon = library.uiSettings.dropdownIcon,
+                        sliderIcon = library.uiSettings.sliderIcon,
+                        textboxIcon = library.uiSettings.textboxIcon,
+                        sectionExpandIcon = library.uiSettings.sectionExpandIcon,
+                        sectionCollapseIcon = library.uiSettings.sectionCollapseIcon,
+                        iconSize = library.uiSettings.iconSize,
+                        iconColor = library.uiSettings.iconColor,
+                        iconTransparency = library.uiSettings.iconTransparency
+                    }
+                    
+                    local configName = "图标配置_" .. os.date("%Y%m%d_%H%M%S")
+                    library.uiSettings.iconConfig = iconConfig
+                    SaveConfig(configName)
+                    statusLabel.Text = "图标配置已保存: " .. configName
+                end)
+
+                section:Button("应用样式", function()
+                    library:UpdateUIStyle()
+                    statusLabel.Text = "样式已应用"
+                end)
+            end
+
+            return section
+        end
+
+        return tab
+    end
+
+    task.spawn(function()
+        task.wait(1)
+        local latestConfig = GetLatestConfig()
+        if latestConfig then
+            local config = library.configs[latestConfig]
+            if not config then
+                local filename = "BlackHoleUI_" .. latestConfig .. ".json"
+                if readfile and isfile and isfile(filename) then
+                    local success, result = pcall(function()
+                        return game:GetService("HttpService"):JSONDecode(readfile(filename))
+                    end)
+                    if success then
+                        config = result
+                        library.configs[latestConfig] = config
+                    end
+                end
+            end
+            
+            if config then
+                config = MigrateConfig(config)
+                
+                if config.uiSettings then
+                    for setting, value in pairs(config.uiSettings) do
+                        if type(value) == "table" and value._type == "UDim2" then
+                            library.uiSettings[setting] = UDim2.new(value.X.Scale, value.X.Offset, value.Y.Scale, value.Y.Offset)
+                        elseif type(value) == "table" and value._type == "Color3" then
+                            library.uiSettings[setting] = Color3.new(value.R, value.G, value.B)
+                        else
+                            library.uiSettings[setting] = value
+                        end
+                    end
+                    
+                    library.uiSettings.tabIcon = library.uiSettings.tabIcon or "5436396975"
+                    library.uiSettings.buttonIcon = library.uiSettings.buttonIcon or ""
+                    library.uiSettings.toggleOnIcon = library.uiSettings.toggleOnIcon or ""
+                    library.uiSettings.toggleOffIcon = library.uiSettings.toggleOffIcon or ""
+                    library.uiSettings.dropdownIcon = library.uiSettings.dropdownIcon or ""
+                    library.uiSettings.sliderIcon = library.uiSettings.sliderIcon or ""
+                    library.uiSettings.textboxIcon = library.uiSettings.textboxIcon or ""
+                    library.uiSettings.sectionExpandIcon = library.uiSettings.sectionExpandIcon or "6031302934"
+                    library.uiSettings.sectionCollapseIcon = library.uiSettings.sectionCollapseIcon or "6031302932"
+                    library.uiSettings.iconSize = library.uiSettings.iconSize or 24
+                    library.uiSettings.iconColor = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+                    library.uiSettings.iconTransparency = library.uiSettings.iconTransparency or 0
+                end
+
+                if config.uiPosition then
+                    library.uiPosition = UDim2.new(
+                        config.uiPosition.X.Scale, config.uiPosition.X.Offset,
+                        config.uiPosition.Y.Scale, config.uiPosition.Y.Offset
+                    )
+                    Main.Position = library.uiPosition
+                end
+                
+                library.currentConfig = latestConfig
+                library:UpdateUIStyle()
+            end
+        else
+            SaveConfig("默认配置")
+        end
+    end)
+
+    library:UpdateUIStyle()
+    return window
+end
+
+return library

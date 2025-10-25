@@ -2588,7 +2588,7 @@ function library.new(library, name, theme)
                                 function()
                                     while library.flags.auto_save do
                                         task.wait(2)
-                                        SaveConfig("自动保存")
+                                        SaveConfig("默认配置")
                                         statusLabel.Text = "自动保存完成: " .. os.date("%H:%M:%S")
                                     end
                                 end

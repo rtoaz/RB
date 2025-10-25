@@ -2650,6 +2650,8 @@ function library.new(library, name, theme)
                 end)
             end
 
+            function section.UIStyleSettings(se
+
                 local statusLabel = section:Label("UI样式设置")
                 
                 local themeLabel = section:Label("主题设置")

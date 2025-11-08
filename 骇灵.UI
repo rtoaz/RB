@@ -475,7 +475,7 @@ local function SaveConfig(name)
 
     library.configs[name] = data
 
-    if writefile then
+    if pcall(function() return writefile end) and writefile then
         local success, result = pcall(function()
             writefile("BlackHoleUI_" .. name .. ".json", game:GetService("HttpService"):JSONEncode(data))
         end)
@@ -491,7 +491,7 @@ end
 
 local function LoadConfig(name)
     if not library.configs[name] then
-        if readfile and isfile then
+        if pcall(function() return readfile end) and readfile and pcall(function() return isfile end) and isfile then
             local filename = "BlackHoleUI_" .. name .. ".json"
             if isfile(filename) then
                 local success, result = pcall(function()
@@ -558,7 +558,7 @@ local function DeleteConfig(name)
     if library.configs[name] then
         library.configs[name] = nil
 
-        if delfile and isfile then
+        if pcall(function() return delfile end) and delfile and pcall(function() return isfile end) and isfile then
             local filename = "BlackHoleUI_" .. name .. ".json"
             if isfile(filename) then
                 delfile(filename)
@@ -577,7 +577,7 @@ local function GetConfigList()
         table.insert(configs, name)
     end
 
-    if listfiles and isfolder then
+    if pcall(function() return listfiles end) and listfiles and pcall(function() return isfolder end) and isfolder then
         pcall(
             function()
                 local files = listfiles("")
@@ -659,7 +659,7 @@ local function CopyConfigData()
 
     local jsonData = game:GetService("HttpService"):JSONEncode(configData)
 
-    if setclipboard then
+    if pcall(function() return setclipboard end) and setclipboard then
         setclipboard(jsonData)
         return true, "配置数据已复制到剪贴板"
     else
@@ -731,7 +731,7 @@ local function GetLatestConfig()
             configData = library.configs[name]
         else
             local filename = "BlackHoleUI_" .. name .. ".json"
-            if readfile and isfile and isfile(filename) then
+            if pcall(function() return readfile end) and readfile and pcall(function() return isfile end) and isfile and isfile(filename) then
                 local success, result = pcall(function()
                     return game:GetService("HttpService"):JSONDecode(readfile(filename))
                 end)
@@ -770,16 +770,41 @@ local function MigrateConfig(configData)
     end
     return configData
 end
-local services = setmetatable({}, {
-    __index = function(t, k)
-        return game.GetService(game, k)
-    end
-})
-local mouse = services.Players.LocalPlayer:GetMouse()
+
+local success, servicesResult = pcall(function()
+    return game:GetService("Players")
+end)
+
+local services
+if success then
+    services = setmetatable({}, {
+        __index = function(t, k)
+            local serviceSuccess, service = pcall(function()
+                return game:GetService(k)
+            end)
+            if serviceSuccess then
+                return service
+            end
+            return nil
+        end
+    })
+else
+    services = {}
+end
+
+local mouseSuccess, mouse = pcall(function()
+    return services.Players.LocalPlayer:GetMouse()
+end)
+if not mouseSuccess then
+    mouse = {X = 0, Y = 0}
+end
 
 function Tween(obj, t, data)
-    services.TweenService:Create(obj, TweenInfo.new(t[1], Enum.EasingStyle[t[2]], Enum.EasingDirection[t[3]]), data):Play()
-    return true
+    local tweenSuccess, result = pcall(function()
+        services.TweenService:Create(obj, TweenInfo.new(t[1], Enum.EasingStyle[t[2]], Enum.EasingDirection[t[3]]), data):Play()
+        return true
+    end)
+    return tweenSuccess
 end
 
 function Ripple(obj)
@@ -797,7 +822,13 @@ function Ripple(obj)
         Ripple.ImageTransparency = 0.800
         Ripple.ScaleType = Enum.ScaleType.Fit
         Ripple.ImageColor3 = Color3.fromRGB(255, 255, 255)
-        Ripple.Position = UDim2.new((mouse.X - Ripple.AbsolutePosition.X) / obj.AbsoluteSize.X, 0, (mouse.Y - Ripple.AbsolutePosition.Y) / obj.AbsoluteSize.Y, 0)
+        
+        local mouseX, mouseY = 0, 0
+        local mouseSuccess = pcall(function()
+            mouseX, mouseY = mouse.X, mouse.Y
+        end)
+        
+        Ripple.Position = UDim2.new((mouseX - Ripple.AbsolutePosition.X) / obj.AbsoluteSize.X, 0, (mouseY - Ripple.AbsolutePosition.Y) / obj.AbsoluteSize.Y, 0)
         Tween(Ripple, {0.3, "Linear", "InOut"}, {Position = UDim2.new(-5.5, 0, -5.5, 0), Size = UDim2.new(12, 0, 12, 0)})
         wait(0.15)
         Tween(Ripple, {0.3, "Linear", "InOut"}, {ImageTransparency = 1})
@@ -817,8 +848,12 @@ function switchTab(new)
     if old == nil then
         new[2].Visible = true
         library.currentTab = new
-        services.TweenService:Create(new[1], TweenInfo.new(0.1), {ImageTransparency = 0}):Play()
-        services.TweenService:Create(new[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+        local tweenSuccess1 = pcall(function()
+            services.TweenService:Create(new[1], TweenInfo.new(0.1), {ImageTransparency = 0}):Play()
+        end)
+        local tweenSuccess2 = pcall(function()
+            services.TweenService:Create(new[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+        end)
         return
     end
     if old[1] == new[1] then
@@ -826,10 +861,18 @@ function switchTab(new)
     end
     switchingTabs = true
     library.currentTab = new
-    services.TweenService:Create(old[1], TweenInfo.new(0.1), {ImageTransparency = 0.2}):Play()
-    services.TweenService:Create(new[1], TweenInfo.new(0.1), {ImageTransparency = 0}):Play()
-    services.TweenService:Create(old[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0.2}):Play()
-    services.TweenService:Create(new[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+    pcall(function()
+        services.TweenService:Create(old[1], TweenInfo.new(0.1), {ImageTransparency = 0.2}):Play()
+    end)
+    pcall(function()
+        services.TweenService:Create(new[1], TweenInfo.new(0.1), {ImageTransparency = 0}):Play()
+    end)
+    pcall(function()
+        services.TweenService:Create(old[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0.2}):Play()
+    end)
+    pcall(function()
+        services.TweenService:Create(new[1].TabText, TweenInfo.new(0.1), {TextTransparency = 0}):Play()
+    end)
     old[2].Visible = false
     new[2].Visible = true
     task.wait(0.1)
@@ -848,36 +891,45 @@ function drag(frame, hold)
         local delta = input.Position - dragStart
         frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
-    hold.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
+    local inputBeganSuccess = pcall(function()
+        hold.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = frame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
     end)
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
+    
+    local inputChangedSuccess = pcall(function()
+        frame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
     end)
-    services.UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            update(input)
-        end
+    
+    local userInputSuccess = pcall(function()
+        services.UserInputService.InputChanged:Connect(function(input)
+            if input == dragInput and dragging then
+                update(input)
+            end
+        end)
     end)
 end
-
 function library.new(library, name, theme)
-    for _, v in next, services.CoreGui:GetChildren() do
-        if v.Name == "REN" then
-            v:Destroy()
+    pcall(function()
+        for _, v in next, services.CoreGui:GetChildren() do
+            if v.Name == "REN" then
+                v:Destroy()
+            end
         end
-    end
+    end)
 
     local dogent = Instance.new("ScreenGui")
     local Main = Instance.new("Frame")
@@ -901,9 +953,11 @@ function library.new(library, name, theme)
     local UIGradientTitle = Instance.new("UIGradient")
     local BackgroundImage = Instance.new("ImageLabel")
 
-    if syn and syn.protect_gui then
-        syn.protect_gui(dogent)
-    end
+    pcall(function()
+        if syn and syn.protect_gui then
+            syn.protect_gui(dogent)
+        end
+    end)
 
     dogent.Name = "REN"
     dogent.Parent = services.CoreGui
@@ -920,7 +974,9 @@ function library.new(library, name, theme)
     }
 
     function UiDestroy()
-        dogent:Destroy()
+        pcall(function()
+            dogent:Destroy()
+        end)
     end
 
     function ToggleUILib()
@@ -928,155 +984,157 @@ function library.new(library, name, theme)
     end
 
     function library:UpdateUIStyle()
-        local baseWidth, baseHeight = 572, 353
-        Main.Size = UDim2.new(0, baseWidth * library.uiSettings.uiSize, 0, baseHeight * library.uiSettings.uiSize)
-        Main.Position = library.uiPosition
+        pcall(function()
+            local baseWidth, baseHeight = 572, 353
+            Main.Size = UDim2.new(0, baseWidth * library.uiSettings.uiSize, 0, baseHeight * library.uiSettings.uiSize)
+            Main.Position = library.uiPosition
 
-        Main.BackgroundColor3 = library.uiSettings.backgroundColor
-        Main.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+            Main.BackgroundColor3 = library.uiSettings.backgroundColor
+            Main.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
 
-        SB.BackgroundColor3 = library.uiSettings.backgroundColor
-        SB.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
-        Side.BackgroundColor3 = library.uiSettings.backgroundColor
-        Side.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+            SB.BackgroundColor3 = library.uiSettings.backgroundColor
+            SB.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+            Side.BackgroundColor3 = library.uiSettings.backgroundColor
+            Side.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
 
-        TabMain.Size = UDim2.new(0, 448 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)
+            TabMain.Size = UDim2.new(0, 448 * library.uiSettings.uiSize, 0, 353 * library.uiSettings.uiSize)
 
-        if UICornerMain then
-            UICornerMain.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
-        end
-
-        if SBC then
-            SBC.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
-        end
-
-        if library.uiSettings.backgroundImage and library.uiSettings.backgroundImage ~= "" then
-            BackgroundImage.Image = "rbxassetid://" .. library.uiSettings.backgroundImage
-            BackgroundImage.Visible = true
-        else
-            BackgroundImage.Visible = false
-        end
-
-        Open.Size = UDim2.new(0, library.uiSettings.minimizeSize.X.Offset * library.uiSettings.uiSize, 0, library.uiSettings.minimizeSize.Y.Offset * library.uiSettings.uiSize)
-        Open.BackgroundColor3 = library.uiSettings.backgroundColor
-        Open.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
-        Open.TextColor3 = library.uiSettings.textColor
-        Open.TextSize = 14 * library.uiSettings.uiSize
-
-        if library.uiSettings.minimizeShape == "PureCircle" then
-            local size = math.min(library.uiSettings.minimizeSize.X.Offset, library.uiSettings.minimizeSize.Y.Offset) * library.uiSettings.uiSize
-            Open.Size = UDim2.new(0, size, 0, size)
-            OpenCorner.CornerRadius = UDim.new(1, 0)
-        elseif library.uiSettings.minimizeShape == "Circle" then
-            OpenCorner.CornerRadius = UDim.new(0.5, 0)
-        elseif library.uiSettings.minimizeShape == "Rounded" then
-            OpenCorner.CornerRadius = UDim.new(0, 8 * library.uiSettings.uiSize)
-        else
-            OpenCorner.CornerRadius = UDim.new(0, 0)
-        end
-
-        if library.uiSettings.minimizeImage and library.uiSettings.minimizeImage ~= "" then
-            local imageLabel = Open:FindFirstChild("MinimizeImage")
-            if not imageLabel then
-                imageLabel = Instance.new("ImageLabel")
-                imageLabel.Name = "MinimizeImage"
-                imageLabel.Parent = Open
-                imageLabel.BackgroundTransparency = 1
-                imageLabel.Size = UDim2.new(0.7, 0, 0.7, 0)
-                imageLabel.Position = UDim2.new(0.15, 0, 0.15, 0)
-                imageLabel.ZIndex = Open.ZIndex + 1
+            if UICornerMain then
+                UICornerMain.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
             end
-            imageLabel.Image = "rbxassetid://" .. library.uiSettings.minimizeImage
-            Open.Text = ""
-        else
-            local imageLabel = Open:FindFirstChild("MinimizeImage")
-            if imageLabel then
-                imageLabel:Destroy()
+
+            if SBC then
+                SBC.CornerRadius = UDim.new(0, library.uiSettings.cornerRadius * library.uiSettings.uiSize)
             end
-            Open.Text = "黑洞中心"
-        end
 
-        ScriptTitle.TextColor3 = library.uiSettings.textColor
-        ScriptTitle.TextSize = library.uiSettings.titleTextSize * library.uiSettings.uiSize
-
-        SideG.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
-            ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
-        })
-
-        SBG.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
-            ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
-        })
-
-        for _, tabIco in pairs(TabBtns:GetChildren()) do
-            if tabIco:IsA("ImageLabel") and tabIco:FindFirstChild("TabText") then
-                tabIco.TabText.TextColor3 = library.uiSettings.textColor
-                tabIco.TabText.TextSize = library.uiSettings.tabTextSize * library.uiSettings.uiSize
+            if library.uiSettings.backgroundImage and library.uiSettings.backgroundImage ~= "" then
+                BackgroundImage.Image = "rbxassetid://" .. library.uiSettings.backgroundImage
+                BackgroundImage.Visible = true
+            else
+                BackgroundImage.Visible = false
             end
-        end
 
-        for _, tab in pairs(TabMain:GetChildren()) do
-            if tab:IsA("ScrollingFrame") then
-                for _, section in pairs(tab:GetChildren()) do
-                    if section:IsA("Frame") and section:FindFirstChild("SectionText") then
-                        section.SectionText.TextColor3 = library.uiSettings.textColor
-                        section.SectionText.TextSize = library.uiSettings.sectionTextSize * library.uiSettings.uiSize
+            Open.Size = UDim2.new(0, library.uiSettings.minimizeSize.X.Offset * library.uiSettings.uiSize, 0, library.uiSettings.minimizeSize.Y.Offset * library.uiSettings.uiSize)
+            Open.BackgroundColor3 = library.uiSettings.backgroundColor
+            Open.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+            Open.TextColor3 = library.uiSettings.textColor
+            Open.TextSize = 14 * library.uiSettings.uiSize
 
-                        section.BackgroundColor3 = library.uiSettings.controlColor
-                        section.BackgroundTransparency = library.uiSettings.controlTransparency
+            if library.uiSettings.minimizeShape == "PureCircle" then
+                local size = math.min(library.uiSettings.minimizeSize.X.Offset, library.uiSettings.minimizeSize.Y.Offset) * library.uiSettings.uiSize
+                Open.Size = UDim2.new(0, size, 0, size)
+                OpenCorner.CornerRadius = UDim.new(1, 0)
+            elseif library.uiSettings.minimizeShape == "Circle" then
+                OpenCorner.CornerRadius = UDim.new(0.5, 0)
+            elseif library.uiSettings.minimizeShape == "Rounded" then
+                OpenCorner.CornerRadius = UDim.new(0, 8 * library.uiSettings.uiSize)
+            else
+                OpenCorner.CornerRadius = UDim.new(0, 0)
+            end
 
-                        local sectionCorner = section:FindFirstChild("SectionC")
-                        if sectionCorner then
-                            sectionCorner.CornerRadius = UDim.new(0, library.uiSettings.sectionCornerRadius * library.uiSettings.uiSize)
-                        end
+            if library.uiSettings.minimizeImage and library.uiSettings.minimizeImage ~= "" then
+                local imageLabel = Open:FindFirstChild("MinimizeImage")
+                if not imageLabel then
+                    imageLabel = Instance.new("ImageLabel")
+                    imageLabel.Name = "MinimizeImage"
+                    imageLabel.Parent = Open
+                    imageLabel.BackgroundTransparency = 1
+                    imageLabel.Size = UDim2.new(0.7, 0, 0.7, 0)
+                    imageLabel.Position = UDim2.new(0.15, 0, 0.15, 0)
+                    imageLabel.ZIndex = Open.ZIndex + 1
+                end
+                imageLabel.Image = "rbxassetid://" .. library.uiSettings.minimizeImage
+                Open.Text = ""
+            else
+                local imageLabel = Open:FindFirstChild("MinimizeImage")
+                if imageLabel then
+                    imageLabel:Destroy()
+                end
+                Open.Text = "黑洞中心"
+            end
 
-                        if section:FindFirstChild("Objs") then
-                            local objs = section.Objs
-                            for _, obj in pairs(objs:GetChildren()) do
-                                if obj:IsA("Frame") then
-                                    for _, element in pairs(obj:GetChildren()) do
-                                        if element:IsA("TextButton") or element:IsA("TextLabel") then
-                                            if element.Name == "Btn" or element.Name == "ToggleBtn" or element.Name == "KeybindBtn" or element.Name == "TextboxBack" or element.Name == "SliderBack" or element.Name == "DropdownTop" then
-                                                element.BackgroundColor3 = library.uiSettings.controlColor
-                                                element.BackgroundTransparency = library.uiSettings.controlTransparency
+            ScriptTitle.TextColor3 = library.uiSettings.textColor
+            ScriptTitle.TextSize = library.uiSettings.titleTextSize * library.uiSettings.uiSize
 
-                                                local btnCorner = element:FindFirstChildOfClass("UICorner")
-                                                if btnCorner then
-                                                    btnCorner.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
-                                                end
-                                            end
+            SideG.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
+                ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
+            })
 
-                                            if element:IsA("TextButton") then
-                                                element.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
-                                            elseif element:IsA("TextLabel") then
-                                                element.TextSize = library.uiSettings.labelTextSize * library.uiSettings.uiSize
-                                            end
+            SBG.Color = ColorSequence.new({
+                ColorSequenceKeypoint.new(0.00, library.uiSettings.controlColor),
+                ColorSequenceKeypoint.new(1.00, library.uiSettings.controlColor)
+            })
 
-                                            element.TextColor3 = library.uiSettings.textColor
-                                        end
+            for _, tabIco in pairs(TabBtns:GetChildren()) do
+                if tabIco:IsA("ImageLabel") and tabIco:FindFirstChild("TabText") then
+                    tabIco.TabText.TextColor3 = library.uiSettings.textColor
+                    tabIco.TabText.TextSize = library.uiSettings.tabTextSize * library.uiSettings.uiSize
+                end
+            end
 
-                                        if element:IsA("Frame") then
-                                            for _, subElement in pairs(element:GetChildren()) do
-                                                if subElement.Name == "ToggleDisable" or subElement.Name == "SliderBar" or subElement.Name == "SliderValBG" or subElement.Name == "BoxBG" or subElement.Name == "KeybindValue" then
-                                                    subElement.BackgroundColor3 = library.uiSettings.backgroundColor
-                                                    subElement.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+            for _, tab in pairs(TabMain:GetChildren()) do
+                if tab:IsA("ScrollingFrame") then
+                    for _, section in pairs(tab:GetChildren()) do
+                        if section:IsA("Frame") and section:FindFirstChild("SectionText") then
+                            section.SectionText.TextColor3 = library.uiSettings.textColor
+                            section.SectionText.TextSize = library.uiSettings.sectionTextSize * library.uiSettings.uiSize
 
-                                                    local subCorner = subElement:FindFirstChildOfClass("UICorner")
-                                                    if subCorner then
-                                                        if subElement.Name == "SliderBar" then
-                                                            subCorner.CornerRadius = UDim.new(0, library.uiSettings.sliderCornerRadius * library.uiSettings.uiSize)
-                                                        else
-                                                            subCorner.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
-                                                        end
+                            section.BackgroundColor3 = library.uiSettings.controlColor
+                            section.BackgroundTransparency = library.uiSettings.controlTransparency
+
+                            local sectionCorner = section:FindFirstChild("SectionC")
+                            if sectionCorner then
+                                sectionCorner.CornerRadius = UDim.new(0, library.uiSettings.sectionCornerRadius * library.uiSettings.uiSize)
+                            end
+
+                            if section:FindFirstChild("Objs") then
+                                local objs = section.Objs
+                                for _, obj in pairs(objs:GetChildren()) do
+                                    if obj:IsA("Frame") then
+                                        for _, element in pairs(obj:GetChildren()) do
+                                            if element:IsA("TextButton") or element:IsA("TextLabel") then
+                                                if element.Name == "Btn" or element.Name == "ToggleBtn" or element.Name == "KeybindBtn" or element.Name == "TextboxBack" or element.Name == "SliderBack" or element.Name == "DropdownTop" then
+                                                    element.BackgroundColor3 = library.uiSettings.controlColor
+                                                    element.BackgroundTransparency = library.uiSettings.controlTransparency
+
+                                                    local btnCorner = element:FindFirstChildOfClass("UICorner")
+                                                    if btnCorner then
+                                                        btnCorner.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
                                                     end
-                                                elseif subElement:IsA("TextBox") then
-                                                    subElement.TextSize = library.uiSettings.textboxTextSize * library.uiSettings.uiSize
-                                                    subElement.TextColor3 = library.uiSettings.textColor
-                                                    subElement.PlaceholderColor3 = library.uiSettings.placeholderColor
-                                                elseif subElement:IsA("TextLabel") then
-                                                    subElement.TextSize = library.uiSettings.labelTextSize * library.uiSettings.uiSize
-                                                    subElement.TextColor3 = library.uiSettings.textColor
+                                                end
+
+                                                if element:IsA("TextButton") then
+                                                    element.TextSize = library.uiSettings.buttonTextSize * library.uiSettings.uiSize
+                                                elseif element:IsA("TextLabel") then
+                                                    element.TextSize = library.uiSettings.labelTextSize * library.uiSettings.uiSize
+                                                end
+
+                                                element.TextColor3 = library.uiSettings.textColor
+                                            end
+
+                                            if element:IsA("Frame") then
+                                                for _, subElement in pairs(element:GetChildren()) do
+                                                    if subElement.Name == "ToggleDisable" or subElement.Name == "SliderBar" or subElement.Name == "SliderValBG" or subElement.Name == "BoxBG" or subElement.Name == "KeybindValue" then
+                                                        subElement.BackgroundColor3 = library.uiSettings.backgroundColor
+                                                        subElement.BackgroundTransparency = library.uiSettings.backgroundColorTransparency
+
+                                                        local subCorner = subElement:FindFirstChildOfClass("UICorner")
+                                                        if subCorner then
+                                                            if subElement.Name == "SliderBar" then
+                                                                subCorner.CornerRadius = UDim.new(0, library.uiSettings.sliderCornerRadius * library.uiSettings.uiSize)
+                                                            else
+                                                                subCorner.CornerRadius = UDim.new(0, library.uiSettings.buttonCornerRadius * library.uiSettings.uiSize)
+                                                            end
+                                                        end
+                                                    elseif subElement:IsA("TextBox") then
+                                                        subElement.TextSize = library.uiSettings.textboxTextSize * library.uiSettings.uiSize
+                                                        subElement.TextColor3 = library.uiSettings.textColor
+                                                        subElement.PlaceholderColor3 = library.uiSettings.placeholderColor
+                                                    elseif subElement:IsA("TextLabel") then
+                                                        subElement.TextSize = library.uiSettings.labelTextSize * library.uiSettings.uiSize
+                                                        subElement.TextColor3 = library.uiSettings.textColor
+                                                    end
                                                 end
                                             end
                                         end
@@ -1087,81 +1145,85 @@ function library.new(library, name, theme)
                     end
                 end
             end
-        end
-        
-        for _, tabIco in pairs(TabBtns:GetChildren()) do
-            if tabIco:IsA("ImageLabel") then
-                local iconId = library.uiSettings.tabIcon or "4370341699"
-                tabIco.Image = "rbxassetid://" .. iconId
-                
-                tabIco.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
-                tabIco.ImageTransparency = library.uiSettings.iconTransparency or 0
-                
-                local iconSize = library.uiSettings.iconSize or 24
-                tabIco.Size = UDim2.new(0, iconSize * library.uiSettings.uiSize, 0, iconSize * library.uiSettings.uiSize)
+            
+            for _, tabIco in pairs(TabBtns:GetChildren()) do
+                if tabIco:IsA("ImageLabel") then
+                    local iconId = library.uiSettings.tabIcon or "4370341699"
+                    tabIco.Image = "rbxassetid://" .. iconId
+                    
+                    tabIco.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+                    tabIco.ImageTransparency = library.uiSettings.iconTransparency or 0
+                    
+                    local iconSize = library.uiSettings.iconSize or 24
+                    tabIco.Size = UDim2.new(0, iconSize * library.uiSettings.uiSize, 0, iconSize * library.uiSettings.uiSize)
+                end
             end
-        end
-        
-        for _, tab in pairs(TabMain:GetChildren()) do
-            if tab:IsA("ScrollingFrame") then
-                for _, section in pairs(tab:GetChildren()) do
-                    if section:IsA("Frame") then
-                        local sectionOpen = section:FindFirstChild("SectionOpen")
-                        local sectionOpened = section:FindFirstChild("SectionOpened")
-                        
-                        if sectionOpen then
-                            sectionOpen.Image = "rbxassetid://" .. (library.uiSettings.sectionExpandIcon or "6031302934")
-                            sectionOpen.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
-                            sectionOpen.ImageTransparency = library.uiSettings.iconTransparency or 0
-                            sectionOpen.Size = UDim2.new(0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize, 0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize)
-                        end
-                        
-                        if sectionOpened then
-                            sectionOpened.Image = "rbxassetid://" .. (library.uiSettings.sectionCollapseIcon or "6031302932")
-                            sectionOpened.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
-                            sectionOpened.ImageTransparency = library.uiSettings.iconTransparency or 0
-                            sectionOpened.Size = UDim2.new(0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize, 0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize)
+            
+            for _, tab in pairs(TabMain:GetChildren()) do
+                if tab:IsA("ScrollingFrame") then
+                    for _, section in pairs(tab:GetChildren()) do
+                        if section:IsA("Frame") then
+                            local sectionOpen = section:FindFirstChild("SectionOpen")
+                            local sectionOpened = section:FindFirstChild("SectionOpened")
+                            
+                            if sectionOpen then
+                                sectionOpen.Image = "rbxassetid://" .. (library.uiSettings.sectionExpandIcon or "6031302934")
+                                sectionOpen.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+                                sectionOpen.ImageTransparency = library.uiSettings.iconTransparency or 0
+                                sectionOpen.Size = UDim2.new(0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize, 0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize)
+                            end
+                            
+                            if sectionOpened then
+                                sectionOpened.Image = "rbxassetid://" .. (library.uiSettings.sectionCollapseIcon or "6031302932")
+                                sectionOpened.ImageColor3 = library.uiSettings.iconColor or Color3.fromRGB(255, 255, 255)
+                                sectionOpened.ImageTransparency = library.uiSettings.iconTransparency or 0
+                                sectionOpened.Size = UDim2.new(0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize, 0, (library.uiSettings.iconSize or 24) * library.uiSettings.uiSize)
+                            end
                         end
                     end
                 end
             end
-        end
-        
-        if library.uiSettings.blurBackground then
-            if not library.uiElements.BlurEffect then
-                local blur = Instance.new("BlurEffect")
-                blur.Name = "BlurEffect"
-                blur.Size = library.uiSettings.blurIntensity
-                blur.Parent = game:GetService("Lighting")
-                library.uiElements.BlurEffect = blur
+            
+            if library.uiSettings.blurBackground then
+                if not library.uiElements.BlurEffect then
+                    local blur = Instance.new("BlurEffect")
+                    blur.Name = "BlurEffect"
+                    blur.Size = library.uiSettings.blurIntensity
+                    pcall(function()
+                        blur.Parent = game:GetService("Lighting")
+                    end)
+                    library.uiElements.BlurEffect = blur
+                else
+                    library.uiElements.BlurEffect.Size = library.uiSettings.blurIntensity
+                end
+            elseif library.uiElements.BlurEffect then
+                pcall(function()
+                    library.uiElements.BlurEffect:Destroy()
+                end)
+                library.uiElements.BlurEffect = nil
+            end
+            
+            if library.uiSettings.glowEffect then
+                if not Main:FindFirstChild("Glow") then
+                    local glow = Instance.new("ImageLabel")
+                    glow.Name = "Glow"
+                    glow.Image = "rbxassetid://4996891970"
+                    glow.ImageColor3 = library.uiSettings.glowColor
+                    glow.BackgroundTransparency = 1
+                    glow.Size = UDim2.new(1, 40, 1, 40)
+                    glow.Position = UDim2.new(0, -20, 0, -20)
+                    glow.ZIndex = -1
+                    glow.Parent = Main
+                end
             else
-                library.uiElements.BlurEffect.Size = library.uiSettings.blurIntensity
+                local glow = Main:FindFirstChild("Glow")
+                if glow then
+                    glow:Destroy()
+                end
             end
-        elseif library.uiElements.BlurEffect then
-            library.uiElements.BlurEffect:Destroy()
-            library.uiElements.BlurEffect = nil
-        end
-        
-        if library.uiSettings.glowEffect then
-            if not Main:FindFirstChild("Glow") then
-                local glow = Instance.new("ImageLabel")
-                glow.Name = "Glow"
-                glow.Image = "rbxassetid://4996891970"
-                glow.ImageColor3 = library.uiSettings.glowColor
-                glow.BackgroundTransparency = 1
-                glow.Size = UDim2.new(1, 40, 1, 40)
-                glow.Position = UDim2.new(0, -20, 0, -20)
-                glow.ZIndex = -1
-                glow.Parent = Main
-            end
-        else
-            local glow = Main:FindFirstChild("Glow")
-            if glow then
-                glow:Destroy()
-            end
-        end
-        
-        self:ApplyCurrentLayout()
+            
+            self:ApplyCurrentLayout()
+        end)
     end
 
     Main.Name = "Main"
@@ -1183,14 +1245,16 @@ function library.new(library, name, theme)
     BackgroundImage.ZIndex = 0
     BackgroundImage.Visible = false
 
-    services.UserInputService.InputEnded:Connect(function(input)
-        if input.KeyCode == Enum.KeyCode.LeftControl then
-            if Main.Visible == true then
-                Main.Visible = false
-            else
-                Main.Visible = true
+    pcall(function()
+        services.UserInputService.InputEnded:Connect(function(input)
+            if input.KeyCode == Enum.KeyCode.LeftControl then
+                if Main.Visible == true then
+                    Main.Visible = false
+                else
+                    Main.Visible = true
+                end
             end
-        end
+        end)
     end)
 
     drag(Main)
@@ -1228,10 +1292,12 @@ function library.new(library, name, theme)
     })
     UIGradient.Parent = DropShadow
 
-    local TweenService = game:GetService("TweenService")
-    local tweeninfo = TweenInfo.new(7, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1)
-    local tween = TweenService:Create(UIGradient, tweeninfo, {Rotation = 360})
-    tween:Play()
+    pcall(function()
+        local TweenService = game:GetService("TweenService")
+        local tweeninfo = TweenInfo.new(7, Enum.EasingStyle.Linear, Enum.EasingDirection.In, -1)
+        local tween = TweenService:Create(UIGradient, tweeninfo, {Rotation = 360})
+        tween:Play()
+    end)
 
     function toggleui()
         toggled = not toggled
@@ -1880,17 +1946,19 @@ function library.new(library, name, theme)
                 end
                 library.components[flag] = funcs
 
-                services.UserInputService.InputBegan:Connect(function(inp, gpe)
-                    if gpe then
-                        return
-                    end
-                    if inp.UserInputType ~= Enum.UserInputType.Keyboard then
-                        return
-                    end
-                    if inp.KeyCode ~= bindKey then
-                        return
-                    end
-                    callback(bindKey.Name)
+                pcall(function()
+                    services.UserInputService.InputBegan:Connect(function(inp, gpe)
+                        if gpe then
+                            return
+                        end
+                        if inp.UserInputType ~= Enum.UserInputType.Keyboard then
+                            return
+                        end
+                        if inp.KeyCode ~= bindKey then
+                            return
+                        end
+                        callback(bindKey.Name)
+                    end)
                 end)
 
                 KeybindValue.MouseButton1Click:Connect(function()
@@ -2208,16 +2276,20 @@ function library.new(library, name, theme)
                     end
                 end)
 
-                services.UserInputService.InputEnded:Connect(function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        dragging = false
-                    end
+                pcall(function()
+                    services.UserInputService.InputEnded:Connect(function(input)
+                        if dragging and input.UserInputType == Enum.UserInputType.MouseButton1 then
+                            dragging = false
+                        end
+                    end)
                 end)
 
-                services.UserInputService.InputChanged:Connect(function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                        funcs:SetValue()
-                    end
+                pcall(function()
+                    services.UserInputService.InputChanged:Connect(function(input)
+                        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+                            funcs:SetValue()
+                        end
+                    end)
                 end)
 
                 SliderBar.InputBegan:Connect(function(input)
@@ -2227,16 +2299,20 @@ function library.new(library, name, theme)
                     end
                 end)
 
-                services.UserInputService.InputEnded:Connect(function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.Touch then
-                        dragging = false
-                    end
+                pcall(function()
+                    services.UserInputService.InputEnded:Connect(function(input)
+                        if dragging and input.UserInputType == Enum.UserInputType.Touch then
+                            dragging = false
+                        end
+                    end)
                 end)
 
-                services.UserInputService.InputChanged:Connect(function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.Touch then
-                        funcs:SetValue()
-                    end
+                pcall(function()
+                    services.UserInputService.InputChanged:Connect(function(input)
+                        if dragging and input.UserInputType == Enum.UserInputType.Touch then
+                            funcs:SetValue()
+                        end
+                    end)
                 end)
 
                 SliderValue.Focused:Connect(function()
@@ -3212,7 +3288,7 @@ function library.new(library, name, theme)
             local config = library.configs[latestConfig]
             if not config then
                 local filename = "BlackHoleUI_" .. latestConfig .. ".json"
-                if readfile and isfile and isfile(filename) then
+                if pcall(function() return readfile end) and readfile and pcall(function() return isfile end) and isfile and isfile(filename) then
                     local success, result = pcall(function()
                         return game:GetService("HttpService"):JSONDecode(readfile(filename))
                     end)

@@ -1,0 +1,54 @@
+local character = script.Parent
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+local humanoid = character:WaitForChild("Humanoid")
+local originalPosition = humanoidRootPart.Position
+
+game:GetService("RunService").Stepped:Connect(function()
+    if humanoidRootPart.AssemblyLinearVelocity.Magnitude > 100 then
+        humanoidRootPart.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        humanoidRootPart.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        humanoidRootPart.CFrame = CFrame.new(originalPosition) * humanoidRootPart.CFrame.Rotation
+    else
+        originalPosition = humanoidRootPart.Position
+    end
+end)
+
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = { 
+    workspace:WaitForChild("Players"), 
+    workspace:FindFirstChild("IgnoreParts"), 
+    workspace:WaitForChild("Zombies") 
+}
+raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+raycastParams.IgnoreWater = true
+
+local lastPlatformCFrame = nil
+
+game:GetService("RunService").Heartbeat:Connect(function()
+    local raycastResult = workspace:Raycast(humanoidRootPart.Position, Vector3.new(0, -10, 0), raycastParams)
+    
+    if raycastResult and raycastResult.Instance.Parent and raycastResult.Instance.Parent:HasTag("MovingPlatform") then
+        local platform = raycastResult.Instance.Parent
+        
+        if platform.PrimaryPart then
+            local currentPlatformCFrame = platform.PrimaryPart.CFrame
+            
+            if lastPlatformCFrame == nil then
+                lastPlatformCFrame = currentPlatformCFrame
+            end
+            
+            local platformMovement = currentPlatformCFrame * lastPlatformCFrame:Inverse()
+            lastPlatformCFrame = currentPlatformCFrame
+            
+            if not character:HasTag("OnCannon") then
+                humanoidRootPart.CFrame = platformMovement * humanoidRootPart.CFrame
+            end
+        else
+            lastPlatformCFrame = nil
+            return
+        end
+    else
+        lastPlatformCFrame = nil
+        return
+    end
+end)
